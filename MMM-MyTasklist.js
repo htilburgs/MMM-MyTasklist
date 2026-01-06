@@ -49,13 +49,28 @@ Module.register("MMM-MyTasklist", {
   createTaskElement(task) {
     const li = document.createElement("li");
 
+    li.textContent = task.text;
+    li.classList.add("task-item");
+
     if (task.done) {
       li.classList.add("done");
     }
 
-    li.textContent = task.text;
+    // 👉 Klik / tap handler
+    li.addEventListener("click", () => {
+      this.sendSocketNotification("TOGGLE_TASK", task.id);
+    });
+
     return li;
   },
 
   suspend() {
-    if (t
+    if (this.updateTimer) {
+      clearInterval(this.updateTimer);
+    }
+  },
+
+  resume() {
+    this.sendSocketNotification("GET_TASKS");
+  }
+});
