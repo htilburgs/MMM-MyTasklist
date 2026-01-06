@@ -1,8 +1,9 @@
 Module.register("MMM-MyTasklist", {
+  // Default config
   defaults: {
     updateInterval: 300000, // 5 minuten
-    showCompleted: true,
-    maxTasks: null
+    showCompleted: true,    // toon voltooide taken
+    maxTasks: null          // null = geen limiet, anders bijv. 5
   },
 
   start() {
@@ -10,11 +11,13 @@ Module.register("MMM-MyTasklist", {
     this.texts = this.translateStrings();
     this.sendSocketNotification("GET_TASKS");
 
+    // Periodieke update
     this.updateTimer = setInterval(() => {
       this.sendSocketNotification("GET_TASKS");
     }, this.config.updateInterval);
   },
 
+  // Vertalingen
   translateStrings() {
     return {
       NO_TASKS: this.translate("NO_TASKS"),
@@ -23,10 +26,12 @@ Module.register("MMM-MyTasklist", {
     };
   },
 
+  // CSS voor module
   getStyles() {
     return ["MMM-MyTasklist.css"];
   },
 
+  // Ontvangen socket-notificaties
   socketNotificationReceived(notification, payload) {
     if (notification === "TASKS") {
       this.tasks = Array.isArray(payload) ? payload : [];
@@ -34,32 +39,34 @@ Module.register("MMM-MyTasklist", {
     }
   },
 
+  // DOM renderen
   getDom() {
     const wrapper = document.createElement("div");
     wrapper.className = "MMM-MyTasklist";
-  
+
     if (!this.tasks.length) {
       wrapper.innerHTML = this.texts.NO_TASKS;
       return wrapper;
     }
-  
+
     const ul = document.createElement("ul");
-  
-    // filteren op showCompleted
+
+    // Filter op showCompleted
     let visibleTasks = this.tasks.filter(task => this.config.showCompleted || !task.done);
-  
-    // indien maxTasks ingesteld, beperk aantal taken
+
+    // Limiteer aantal taken als maxTasks is ingesteld
     if (this.config.maxTasks && visibleTasks.length > this.config.maxTasks) {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
     }
-  
+
+    // Taken toevoegen aan lijst
     visibleTasks.forEach(task => ul.appendChild(this.createTaskElement(task)));
-  
+
     wrapper.appendChild(ul);
     return wrapper;
-  }
+  },
 
-
+  // Creeer individuele taak element
   createTaskElement(task) {
     const li = document.createElement("li");
     li.classList.add("task-item");
@@ -77,13 +84,16 @@ Module.register("MMM-MyTasklist", {
 
     li.appendChild(checkbox);
     li.appendChild(span);
+
     return li;
   },
 
+  // Stop update timer
   suspend() {
     if (this.updateTimer) clearInterval(this.updateTimer);
   },
 
+  // Resume module
   resume() {
     this.sendSocketNotification("GET_TASKS");
   }
