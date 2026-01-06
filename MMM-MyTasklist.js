@@ -1,7 +1,8 @@
 Module.register("MMM-MyTasklist", {
   defaults: {
     updateInterval: 300000, // 5 minuten
-    showCompleted: true
+    showCompleted: true,
+    maxTasks: null
   },
 
   start() {
