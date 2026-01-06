@@ -34,9 +34,9 @@ Add the module to your modules array in your config.js.
   header: "MyTasklist",
   disabled: false,
   config: {
-      updateInterval: 300000, // 5 minuten
-      showCompleted: true,
-      maxTasks: null // null = geen limiet, anders bijv. 5
+      updateInterval: 300000,   // 5 minutes
+      showCompleted: true,      // true or false
+      maxTasks: null            // null = no limit, use number (1 or 2 or ...) for limiting tasks
 },
 
 }
