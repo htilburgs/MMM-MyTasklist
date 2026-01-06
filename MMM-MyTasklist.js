@@ -2,8 +2,7 @@ Module.register("MMM-MyTasklist", {
   defaults: {
     updateInterval: 300000, // 5 minuten
     showCompleted: true,    // toon voltooide taken
-    maxTasks: null,         // null = geen limiet, anders bijv. 5
-    showCounter: true       // toon teller bovenaan takenlijst
+    maxTasks: null          // null = geen limiet, anders bijv. 5
   },
 
   start() {
@@ -44,20 +43,6 @@ Module.register("MMM-MyTasklist", {
     // Limiteer aantal taken als maxTasks is ingesteld
     if (this.config.maxTasks && visibleTasks.length > this.config.maxTasks) {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
-    }
-
-    // Counter bovenaan (optioneel)
-    if (this.config.showCounter) {
-      const counter = document.createElement("div");
-      counter.className = "task-counter";
-
-      // Enkelvoud / meervoud correct via this.translate()
-      const label = visibleTasks.length === 1
-        ? this.translate("TASK_COUNT_SINGULAR") || "Taak"
-        : this.translate("TASK_COUNT_PLURAL") || "Taken";
-
-      counter.textContent = `${visibleTasks.length} ${label}`;
-      wrapper.appendChild(counter);
     }
 
     // Taken toevoegen
