@@ -28,11 +28,14 @@ Add the module to your modules array in your config.js.
 {
   module: "MMM-MyTasklist",
   position: "top_left",
+  header: "MyTasklist",
+  disabled: false,
   config: {
-    updateInterval: 5000,
-    showCompleted: true,
-    emptyMessage: "🎉 Geen taken!"
-  }
+      updateInterval: 300000, // 5 minuten
+      showCompleted: true,
+      maxTasks: null // null = geen limiet, anders bijv. 5
+},
+
 }
 ```
 ## Load update page for Tasklist
