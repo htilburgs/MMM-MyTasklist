@@ -1,9 +1,8 @@
-/******** MagicMirror styling ********/
-
+/* MagicMirror styling */
 .MMM-MyTasklist {
   font-size: 24px;
   line-height: 1.5;
-  color: #ffffff;
+  color: #fff;
 }
 
 .MMM-MyTasklist ul {
@@ -18,8 +17,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
   transition: background 0.2s ease;
 }
 
@@ -27,13 +27,11 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* Checkbox styling */
 .MMM-MyTasklist input[type="checkbox"] {
   transform: scale(1.5);
   cursor: pointer;
 }
 
-/* Voltooide taak */
 .MMM-MyTasklist span.done {
   text-decoration: line-through;
   opacity: 0.5;
