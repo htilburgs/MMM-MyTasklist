@@ -4,7 +4,6 @@ const fs = require("fs");
 const path = require("path");
 
 module.exports = NodeHelper.create({
-
   start() {
     this.tasksFile = path.join(__dirname, "tasks.json");
     this.setupServer();
@@ -16,15 +15,14 @@ module.exports = NodeHelper.create({
     this.app.use(express.json());
     this.app.use(express.static(path.join(__dirname, "public")));
 
-    // GET alle taken
-    this.app.get("/api/tasks", (req, res) => {
-      res.json(this.loadTasks());
-    });
+    // API: taken ophalen
+    this.app.get("/api/tasks", (req, res) => res.json(this.loadTasks()));
 
-    // POST nieuwe taak
+    // API: taak toevoegen
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if (!text) return res.status(400).send("Geen tekst opgegeven");
+
       const tasks = this.loadTasks();
       tasks.push({ id: Date.now(), text, done: false });
       this.saveTasks(tasks);
@@ -32,7 +30,7 @@ module.exports = NodeHelper.create({
       res.sendStatus(200);
     });
 
-    // POST toggle done
+    // API: toggle taak
     this.app.post("/api/toggle/:id", (req, res) => {
       const tasks = this.loadTasks();
       const task = tasks.find(t => t.id == req.params.id);
@@ -42,7 +40,7 @@ module.exports = NodeHelper.create({
       res.sendStatus(200);
     });
 
-    // POST verwijder taak
+    // API: delete taak
     this.app.post("/api/delete/:id", (req, res) => {
       let tasks = this.loadTasks();
       tasks = tasks.filter(t => t.id != req.params.id);
@@ -51,15 +49,21 @@ module.exports = NodeHelper.create({
       res.sendStatus(200);
     });
 
-    this.app.listen(8123, () => {
-      console.log("MMM-MyTasklist webinterface draait op poort 8123");
+    // API: vertalingen
+    this.app.get("/api/lang", (req, res) => {
+      const lang = req.query.lang || "nl";
+      const translations = require(path.join(__dirname, "translations", `${lang}.json`));
+      res.json(translations);
     });
+
+    this.app.listen(8123, () => console.log("Webinterface draait op poort 8123"));
   },
 
   socketNotificationReceived(notification, payload) {
     if (notification === "GET_TASKS") {
       this.sendSocketNotification("TASKS", this.loadTasks());
     }
+
     if (notification === "TOGGLE_TASK") {
       const tasks = this.loadTasks();
       const task = tasks.find(t => t.id === payload);
@@ -74,8 +78,7 @@ module.exports = NodeHelper.create({
   loadTasks() {
     try {
       if (!fs.existsSync(this.tasksFile)) fs.writeFileSync(this.tasksFile, "[]", "utf8");
-      const data = fs.readFileSync(this.tasksFile, "utf8");
-      return JSON.parse(data);
+      return JSON.parse(fs.readFileSync(this.tasksFile, "utf8"));
     } catch (e) {
       console.error("Fout bij laden tasks.json:", e);
       return [];
