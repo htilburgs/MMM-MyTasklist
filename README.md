@@ -4,8 +4,8 @@
   module: "MMM-MyTasklist",
   position: "top_left",
   config: {
-    updateInterval: 3000,
-    showCompleted: false,
-    emptyMessage: "🎉 Alles gedaan!"
+    updateInterval: 5000,
+    showCompleted: true,
+    emptyMessage: "🎉 Geen taken!"
   }
 }
