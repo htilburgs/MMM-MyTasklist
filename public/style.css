@@ -1,0 +1,107 @@
+/*************************************************
+ * MMM-MyTasklist – Web Interface Stylesheet
+ *************************************************/
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0e0e0e;
+  color: #ffffff;
+  font-family: "Roboto", Arial, sans-serif;
+  margin: 20px;
+}
+
+/* Titel */
+h1 {
+  font-weight: 300;
+  margin-bottom: 20px;
+}
+
+/* Invoerbalk */
+.input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+#taskInput {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  background: #1e1e1e;
+  color: #ffffff;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+/* Knoppen */
+button {
+  padding: 10px 14px;
+  font-size: 15px;
+  background: #444;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+button:hover {
+  background: #666;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+/* Takenlijst */
+#tasks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Taak item */
+#tasks li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  background: #1b1b1b;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+#tasks li:hover {
+  background: #242424;
+}
+
+/* Checkbox */
+#tasks input[type="checkbox"] {
+  transform: scale(1.4);
+  cursor: pointer;
+}
+
+/* Taaktekst */
+.task-text {
+  flex: 1;
+  font-size: 16px;
+}
+
+/* Voltooide taak */
+.task-text.done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/* Verwijderknop */
+.delete-btn {
+  background: #9c2f2f;
+}
+
+.delete-btn:hover {
+  background: #c33c3c;
+}
