@@ -1,0 +1,71 @@
+/*********************************
+ * MagicMirror module styling
+ *********************************/
+
+.MMM-MyTasklist {
+  font-size: 22px;
+  line-height: 1.4;
+}
+
+.MMM-MyTasklist ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.MMM-MyTasklist li {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.MMM-MyTasklist li:last-child {
+  border-bottom: none;
+}
+
+.MMM-MyTasklist .done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/*********************************
+ * Web interface styling
+ *********************************/
+
+body {
+  background: #111;
+  color: #fff;
+  font-family: "Roboto", Arial, sans-serif;
+}
+
+h1 {
+  font-weight: 300;
+}
+
+input[type="text"],
+#taskInput {
+  background: #222;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 8px;
+  font-size: 16px;
+}
+
+button {
+  background: #444;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #666;
+}
+
+ul#tasks {
+  margin-top: 20px;
+  padding: 0;
+}
+
+ul#tasks li {
