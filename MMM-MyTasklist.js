@@ -1,9 +1,7 @@
-
 Module.register("MMM-MyTasklist", {
   defaults: {
-    updateInterval: 300000, // 5 min
-    showCompleted: true,
-    emptyMessage: ""
+    updateInterval: 300000, // 5 minuten
+    showCompleted: true
   },
 
   start() {
@@ -39,18 +37,15 @@ Module.register("MMM-MyTasklist", {
     const wrapper = document.createElement("div");
     wrapper.className = "MMM-MyTasklist";
 
-    if (this.tasks.length === 0) {
+    if (!this.tasks.length) {
       wrapper.innerHTML = this.texts.NO_TASKS;
       return wrapper;
     }
 
     const ul = document.createElement("ul");
-
     this.tasks
       .filter(task => this.config.showCompleted || !task.done)
-      .forEach(task => {
-        ul.appendChild(this.createTaskElement(task));
-      });
+      .forEach(task => ul.appendChild(this.createTaskElement(task)));
 
     wrapper.appendChild(ul);
     return wrapper;
@@ -73,7 +68,6 @@ Module.register("MMM-MyTasklist", {
 
     li.appendChild(checkbox);
     li.appendChild(span);
-
     return li;
   },
 
