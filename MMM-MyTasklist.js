@@ -36,22 +36,20 @@ Module.register("MMM-MyTasklist", {
   getDom() {
     const wrapper = document.createElement("div");
     wrapper.className = "MMM-MyTasklist";
-  
+
     if (!this.tasks.length) {
       wrapper.innerHTML = this.texts.NO_TASKS;
       return wrapper;
     }
-  
+
     const ul = document.createElement("ul");
-  
-    // we tonen taken precies in de volgorde zoals opgeslagen in tasks.json
     this.tasks
       .filter(task => this.config.showCompleted || !task.done)
       .forEach(task => ul.appendChild(this.createTaskElement(task)));
-  
+
     wrapper.appendChild(ul);
     return wrapper;
-  }
+  },
 
   createTaskElement(task) {
     const li = document.createElement("li");
