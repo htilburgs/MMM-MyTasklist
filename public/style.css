@@ -1,6 +1,6 @@
 body { background:#0e0e0e; color:#fff; font-family:Arial; margin:20px; }
 h1 { font-weight:300; margin-bottom:20px; }
-.input-row { display:flex; gap:8px; margin-bottom:20px; }
+.input-row { display:flex; gap:8px; margin-bottom:20px; align-items:center; }
 #taskInput { flex:1; padding:10px; font-size:16px; background:#1e1e1e; color:#fff; border:1px solid #333; border-radius:4px; }
 button { padding:10px 14px; font-size:15px; background:#444; color:#fff; border:none; border-radius:4px; cursor:pointer; transition: background 0.2s ease, transform 0.1s ease; }
 button:hover { background:#666; } button:active { transform:scale(0.96); }
@@ -10,3 +10,4 @@ button:hover { background:#666; } button:active { transform:scale(0.96); }
 #tasks input[type="checkbox"] { transform:scale(1.4); cursor:pointer; }
 .task-text.done { text-decoration:line-through; opacity:0.5; }
 .delete-btn { background:#9c2f2f; } .delete-btn:hover { background:#c33c3c; }
+#langSelect { padding:6px 10px; font-size:14px; border-radius:4px; border:1px solid #333; background:#1e1e1e; color:#fff; cursor:pointer; }
