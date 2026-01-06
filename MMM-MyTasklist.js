@@ -48,19 +48,25 @@ Module.register("MMM-MyTasklist", {
 
   createTaskElement(task) {
     const li = document.createElement("li");
-
-    li.textContent = task.text;
     li.classList.add("task-item");
 
-    if (task.done) {
-      li.classList.add("done");
-    }
-
-    // 👉 Klik / tap handler
-    li.addEventListener("click", () => {
+    // Checkbox
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = task.done;
+    checkbox.addEventListener("change", () => {
       this.sendSocketNotification("TOGGLE_TASK", task.id);
     });
 
+    // Taaktekst
+    const span = document.createElement("span");
+    span.textContent = task.text;
+    if (task.done) {
+      span.classList.add("done");
+    }
+
+    li.appendChild(checkbox);
+    li.appendChild(span);
     return li;
   },
 
