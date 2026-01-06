@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
   <h1>Mijn taken</h1>
 
   <!-- Taalkeuze -->
@@ -35,7 +34,6 @@
     const tasksUl = document.getElementById("tasks");
     const langSelect = document.getElementById("langSelect");
 
-    // Taal laden en instellen
     async function loadLang(lang) {
       const selectedLang = lang || langSelect.value || "nl";
       const res = await fetch(`/api/lang?lang=${selectedLang}`);
@@ -50,17 +48,11 @@
       localStorage.setItem("myTasklistLang", selectedLang);
     }
 
-    // Event: taal wijzigen
     langSelect.addEventListener("change", () => loadLang(langSelect.value).then(loadTasks));
 
-    // Taken ophalen en sorteren (open boven)
     async function loadTasks() {
       const res = await fetch("/api/tasks");
-      let tasks = await res.json();
-
-      // Sorteer: open taken boven, voltooide onder
-      tasks.sort((a, b) => (a.done === b.done ? 0 : a.done ? 1 : -1));
-
+      const tasks = await res.json();
       tasksUl.innerHTML = "";
 
       tasks.forEach(task => {
@@ -74,38 +66,27 @@
       });
     }
 
-    // Voeg taak toe
     async function addTask() {
       const text = taskInput.value.trim();
       if (!text) return;
-
-      await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
-
+      await fetch("/api/tasks", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({text}) });
       taskInput.value = "";
       loadTasks();
     }
 
-    // Toggle done
     async function toggleTask(id) {
-      await fetch(`/api/toggle/${id}`, { method: "POST" });
+      await fetch(`/api/toggle/${id}`, { method:"POST" });
       loadTasks();
     }
 
-    // Delete taak
     async function deleteTask(id) {
-      await fetch(`/api/delete/${id}`, { method: "POST" });
+      await fetch(`/api/delete/${id}`, { method:"POST" });
       loadTasks();
     }
 
-    // Event listeners
     addBtn.addEventListener("click", addTask);
-    taskInput.addEventListener("keypress", e => { if (e.key === "Enter") addTask(); });
+    taskInput.addEventListener("keypress", e => { if(e.key==="Enter") addTask(); });
 
-    // Init: opgeslagen taal of browser taal
     const savedLang = localStorage.getItem("myTasklistLang");
     const browserLang = window.navigator.language.slice(0,2);
     loadLang(savedLang || browserLang || "nl").then(() => {
