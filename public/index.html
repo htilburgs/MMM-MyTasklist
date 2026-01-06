@@ -9,6 +9,18 @@
 <body>
   <h1>Mijn taken</h1>
 
+  <!-- Taalkeuze -->
+  <div class="input-row">
+    <label for="langSelect" style="margin-right:8px;">Taal:</label>
+    <select id="langSelect">
+      <option value="nl">Nederlands</option>
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+    </select>
+  </div>
+
+  <!-- Taak invoer -->
   <div class="input-row">
     <input id="taskInput" placeholder="">
     <button id="addBtn"></button>
@@ -20,17 +32,23 @@
     const taskInput = document.getElementById("taskInput");
     const addBtn = document.getElementById("addBtn");
     const tasksUl = document.getElementById("tasks");
+    const langSelect = document.getElementById("langSelect");
 
-    // laad vertalingen
-    async function loadLang() {
-      const lang = window.navigator.language.slice(0,2) || "nl";
-      const res = await fetch(`/api/lang?lang=${lang}`);
+    async function loadLang(lang) {
+      const selectedLang = lang || langSelect.value || "nl";
+      const res = await fetch(`/api/lang?lang=${selectedLang}`);
       const t = await res.json();
+
       window.MM_TASKS_PLACEHOLDER = t.PLACEHOLDER;
       window.MM_TASKS_ADD = t.ADD_TASK;
+
       taskInput.placeholder = t.PLACEHOLDER;
       addBtn.textContent = t.ADD_TASK;
+
+      localStorage.setItem("myTasklistLang", selectedLang);
     }
+
+    langSelect.addEventListener("change", () => loadLang(langSelect.value).then(loadTasks));
 
     async function loadTasks() {
       const res = await fetch("/api/tasks");
@@ -69,7 +87,12 @@
     addBtn.addEventListener("click", addTask);
     taskInput.addEventListener("keypress", e => { if(e.key==="Enter") addTask(); });
 
-    loadLang().then(loadTasks);
+    const savedLang = localStorage.getItem("myTasklistLang");
+    const browserLang = window.navigator.language.slice(0,2);
+    loadLang(savedLang || browserLang || "nl").then(() => {
+      langSelect.value = savedLang || browserLang || "nl";
+      loadTasks();
+    });
   </script>
 </body>
 </html>
