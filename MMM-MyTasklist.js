@@ -2,7 +2,8 @@ Module.register("MMM-MyTasklist", {
   defaults: {
     updateInterval: 300000, // 5 minuten
     showCompleted: true,    // toon voltooide taken
-    maxTasks: null          // null = geen limiet, anders bijv. 5
+    maxTasks: null,         // null = geen limiet, anders bijv. 5
+    showCounter: true       // toon teller bovenaan takenlijst
   },
 
   start() {
@@ -10,13 +11,11 @@ Module.register("MMM-MyTasklist", {
     this.texts = this.translateStrings();
     this.sendSocketNotification("GET_TASKS");
 
-    // Periodieke update
     this.updateTimer = setInterval(() => {
       this.sendSocketNotification("GET_TASKS");
     }, this.config.updateInterval);
   },
 
-  // Vertalingen
   translateStrings() {
     return {
       NO_TASKS: this.translate("NO_TASKS"),
@@ -26,12 +25,10 @@ Module.register("MMM-MyTasklist", {
     };
   },
 
-  // CSS
   getStyles() {
     return ["MMM-MyTasklist.css"];
   },
 
-  // Ontvangen socket-notificaties
   socketNotificationReceived(notification, payload) {
     if (notification === "TASKS") {
       this.tasks = Array.isArray(payload) ? payload : [];
@@ -39,7 +36,6 @@ Module.register("MMM-MyTasklist", {
     }
   },
 
-  // DOM renderen
   getDom() {
     const wrapper = document.createElement("div");
     wrapper.className = "MMM-MyTasklist";
@@ -59,11 +55,13 @@ Module.register("MMM-MyTasklist", {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
     }
 
-    // Counter bovenaan
-    const counter = document.createElement("div");
-    counter.className = "task-counter";
-    counter.textContent = `${visibleTasks.length} ${this.texts.TASK_COUNT}`;
-    wrapper.appendChild(counter);
+    // Counter bovenaan (optioneel)
+    if (this.config.showCounter) {
+      const counter = document.createElement("div");
+      counter.className = "task-counter";
+      counter.textContent = `${visibleTasks.length} ${this.texts.TASK_COUNT}`;
+      wrapper.appendChild(counter);
+    }
 
     // Taken toevoegen
     visibleTasks.forEach(task => ul.appendChild(this.createTaskElement(task)));
@@ -72,7 +70,6 @@ Module.register("MMM-MyTasklist", {
     return wrapper;
   },
 
-  // Creeer individuele taak element
   createTaskElement(task) {
     const li = document.createElement("li");
     li.classList.add("task-item");
@@ -94,12 +91,10 @@ Module.register("MMM-MyTasklist", {
     return li;
   },
 
-  // Stop update timer
   suspend() {
     if (this.updateTimer) clearInterval(this.updateTimer);
   },
 
-  // Resume module
   resume() {
     this.sendSocketNotification("GET_TASKS");
   }
