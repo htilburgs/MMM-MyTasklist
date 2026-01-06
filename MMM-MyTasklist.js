@@ -16,12 +16,14 @@ Module.register("MMM-MyTasklist", {
     }, this.config.updateInterval);
   },
 
+  // Vertalingen
   translateStrings() {
     return {
       NO_TASKS: this.translate("NO_TASKS"),
       ADD_TASK: this.translate("ADD_TASK"),
       PLACEHOLDER: this.translate("PLACEHOLDER"),
-      TASK_COUNT: this.translate("TASK_COUNT") || "Taken"
+      TASK_COUNT_SINGULAR: this.translate("TASK_COUNT_SINGULAR") || "Taak",
+      TASK_COUNT_PLURAL: this.translate("TASK_COUNT_PLURAL") || "Taken"
     };
   },
 
@@ -59,7 +61,13 @@ Module.register("MMM-MyTasklist", {
     if (this.config.showCounter) {
       const counter = document.createElement("div");
       counter.className = "task-counter";
-      counter.textContent = `${visibleTasks.length} ${this.texts.TASK_COUNT}`;
+
+      // Enkelvoud / meervoud
+      const label = visibleTasks.length === 1 
+        ? this.texts.TASK_COUNT_SINGULAR 
+        : this.texts.TASK_COUNT_PLURAL;
+
+      counter.textContent = `${visibleTasks.length} ${label}`;
       wrapper.appendChild(counter);
     }
 
