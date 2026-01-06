@@ -37,9 +37,8 @@ Add the module to your modules array in your config.js.
       updateInterval: 300000,   // 5 minutes
       showCompleted: true,      // true or false
       maxTasks: null            // null = no limit, use number (1 or 2 or ...) for limiting tasks
+      }
 },
-
-}
 ```
 ## Load update page for Tasklist
 Open a browser and type ```http://serverip address:8123```
