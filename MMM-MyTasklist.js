@@ -8,23 +8,12 @@ Module.register("MMM-MyTasklist", {
 
   start() {
     this.tasks = [];
-    this.texts = this.translateStrings();
     this.sendSocketNotification("GET_TASKS");
 
+    // Periodieke update
     this.updateTimer = setInterval(() => {
       this.sendSocketNotification("GET_TASKS");
     }, this.config.updateInterval);
-  },
-
-  // Vertalingen
-  translateStrings() {
-    return {
-      NO_TASKS: this.translate("NO_TASKS"),
-      ADD_TASK: this.translate("ADD_TASK"),
-      PLACEHOLDER: this.translate("PLACEHOLDER"),
-      TASK_COUNT_SINGULAR: this.translate("TASK_COUNT_SINGULAR") || "Taak",
-      TASK_COUNT_PLURAL: this.translate("TASK_COUNT_PLURAL") || "Taken"
-    };
   },
 
   getStyles() {
@@ -43,7 +32,7 @@ Module.register("MMM-MyTasklist", {
     wrapper.className = "MMM-MyTasklist";
 
     if (!this.tasks.length) {
-      wrapper.innerHTML = this.texts.NO_TASKS;
+      wrapper.innerHTML = this.translate("NO_TASKS") || "Geen taken";
       return wrapper;
     }
 
@@ -62,10 +51,10 @@ Module.register("MMM-MyTasklist", {
       const counter = document.createElement("div");
       counter.className = "task-counter";
 
-      // Enkelvoud / meervoud
-      const label = visibleTasks.length === 1 
-        ? this.texts.TASK_COUNT_SINGULAR 
-        : this.texts.TASK_COUNT_PLURAL;
+      // Enkelvoud / meervoud correct via this.translate()
+      const label = visibleTasks.length === 1
+        ? this.translate("TASK_COUNT_SINGULAR") || "Taak"
+        : this.translate("TASK_COUNT_PLURAL") || "Taken";
 
       counter.textContent = `${visibleTasks.length} ${label}`;
       wrapper.appendChild(counter);
