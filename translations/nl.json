@@ -2,5 +2,6 @@
   "NO_TASKS": "Geen taken",
   "ADD_TASK": "Toevoegen",
   "PLACEHOLDER": "Nieuwe taak...",
-  "TASK_COUNT": "Taken"
+  "TASK_COUNT_SINGULAR": "Taak",
+  "TASK_COUNT_PLURAL": "Taken"
 }
