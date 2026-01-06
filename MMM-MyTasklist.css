@@ -1,38 +1,6 @@
-/* MagicMirror styling */
-.MMM-MyTasklist {
-  font-size: 16px;
-  line-height: 1.5;
-  color: #fff;
-}
-
-.MMM-MyTasklist ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.MMM-MyTasklist li {
-/*  padding: 10px 12px;
-  margin-bottom: 6px; */
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.MMM-MyTasklist li:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.MMM-MyTasklist input[type="checkbox"] {
-  transform: scale(1.5);
-  cursor: pointer;
-}
-
-.MMM-MyTasklist span.done {
-  text-decoration: line-through;
-  opacity: 0.5;
-}
+.MMM-MyTasklist { font-size:24px; line-height:1.5; color:#fff; }
+.MMM-MyTasklist ul { list-style:none; padding:0; margin:0; }
+.MMM-MyTasklist li { padding:10px 12px; margin-bottom:6px; display:flex; align-items:center; gap:10px; border-radius:6px; background:rgba(255,255,255,0.05); cursor:pointer; transition:background 0.2s ease; }
+.MMM-MyTasklist li:hover { background:rgba(255,255,255,0.12); }
+.MMM-MyTasklist input[type="checkbox"] { transform:scale(1.5); cursor:pointer; }
+.MMM-MyTasklist span.done { text-decoration:line-through; opacity:0.5; }
