@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>My Tasklist</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h1>Mijn Taken</h1>
+  <input id="taskInput" placeholder="Nieuwe taak">
+  <button onclick="addTask()">Toevoegen</button>
+  <ul id="tasks"></ul>
+
+  <script>
+    async function loadTasks() {
+      const res = await fetch("/api/tasks");
+      const tasks = await res.json();
+      const ul = document.getElementById("tasks");
+      ul.innerHTML = "";
+
+      tasks.forEach(t => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <input type="checkbox" ${t.done ? "checked" : ""} onclick="toggleTask(${t.id})">
+          ${t.text}
+          <button onclick="deleteTask(${t.id})">X</button>
+        `;
+        ul.appendChild(li);
+      });
+    }
+
+    async function addTask() {
+      const input = document.getElementById("taskInput");
+      await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: input.value })
+      });
+      input.value = "";
+      loadTasks();
+    }
+
+    async function toggleTask(id) {
+      await fetch(`/api/toggle/${id}`, { method: "POST" });
+      loadTasks();
+    }
+
+    async function deleteTask(id) {
+      await fetch(`/api/delete/${id}`, { method: "POST" });
+      loadTasks();
+    }
+
+    loadTasks();
+  </script>
+</body>
+</html>
