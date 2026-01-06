@@ -36,20 +36,28 @@ Module.register("MMM-MyTasklist", {
   getDom() {
     const wrapper = document.createElement("div");
     wrapper.className = "MMM-MyTasklist";
-
+  
     if (!this.tasks.length) {
       wrapper.innerHTML = this.texts.NO_TASKS;
       return wrapper;
     }
-
+  
     const ul = document.createElement("ul");
-    this.tasks
-      .filter(task => this.config.showCompleted || !task.done)
-      .forEach(task => ul.appendChild(this.createTaskElement(task)));
-
+  
+    // filteren op showCompleted
+    let visibleTasks = this.tasks.filter(task => this.config.showCompleted || !task.done);
+  
+    // indien maxTasks ingesteld, beperk aantal taken
+    if (this.config.maxTasks && visibleTasks.length > this.config.maxTasks) {
+      visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
+    }
+  
+    visibleTasks.forEach(task => ul.appendChild(this.createTaskElement(task)));
+  
     wrapper.appendChild(ul);
     return wrapper;
-  },
+  }
+
 
   createTaskElement(task) {
     const li = document.createElement("li");
