@@ -1,5 +1,6 @@
 {
   "NO_TASKS": "Keine Aufgaben",
   "ADD_TASK": "Hinzufügen",
-  "PLACEHOLDER": "Neue Aufgabe..."
+  "PLACEHOLDER": "Neue Aufgabe...",
+  "TASK_COUNT": "Aufgaben"
 }
