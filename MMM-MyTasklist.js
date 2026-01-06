@@ -1,17 +1,27 @@
+
 Module.register("MMM-MyTasklist", {
   defaults: {
-    updateInterval: 5000,
+    updateInterval: 300000, // 5 min
     showCompleted: true,
-    emptyMessage: "Geen taken"
+    emptyMessage: ""
   },
 
   start() {
     this.tasks = [];
+    this.texts = this.translateStrings();
     this.sendSocketNotification("GET_TASKS");
 
     this.updateTimer = setInterval(() => {
       this.sendSocketNotification("GET_TASKS");
     }, this.config.updateInterval);
+  },
+
+  translateStrings() {
+    return {
+      NO_TASKS: this.translate("NO_TASKS"),
+      ADD_TASK: this.translate("ADD_TASK"),
+      PLACEHOLDER: this.translate("PLACEHOLDER")
+    };
   },
 
   getStyles() {
@@ -30,7 +40,7 @@ Module.register("MMM-MyTasklist", {
     wrapper.className = "MMM-MyTasklist";
 
     if (this.tasks.length === 0) {
-      wrapper.innerHTML = this.config.emptyMessage;
+      wrapper.innerHTML = this.texts.NO_TASKS;
       return wrapper;
     }
 
@@ -50,7 +60,6 @@ Module.register("MMM-MyTasklist", {
     const li = document.createElement("li");
     li.classList.add("task-item");
 
-    // Checkbox
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = task.done;
@@ -58,15 +67,13 @@ Module.register("MMM-MyTasklist", {
       this.sendSocketNotification("TOGGLE_TASK", task.id);
     });
 
-    // Taaktekst
     const span = document.createElement("span");
     span.textContent = task.text;
-    if (task.done) {
-      span.classList.add("done");
-    }
+    if (task.done) span.classList.add("done");
 
     li.appendChild(checkbox);
     li.appendChild(span);
+
     return li;
   },
 
