@@ -1,6 +1,4 @@
-/*************************************************
- * MMM-MyTasklist – MagicMirror styling
- *************************************************/
+/******** MagicMirror styling ********/
 
 .MMM-MyTasklist {
   font-size: 24px;
@@ -8,17 +6,35 @@
   color: #ffffff;
 }
 
-/* Takenlijst */
 .MMM-MyTasklist ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-/* Individuele taak */
 .MMM-MyTasklist li {
   padding: 10px 12px;
   margin-bottom: 6px;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
-  background: rg
+  transition: background 0.2s ease;
+}
+
+.MMM-MyTasklist li:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Checkbox styling */
+.MMM-MyTasklist input[type="checkbox"] {
+  transform: scale(1.5);
+  cursor: pointer;
+}
+
+/* Voltooide taak */
+.MMM-MyTasklist span.done {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
