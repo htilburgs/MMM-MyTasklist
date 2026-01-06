@@ -1,50 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Mijn Taken</title>
-  <style>
-    body { background: #0e0e0e; color: #fff; font-family: Arial; margin: 20px; }
-    h1 { font-weight: 300; margin-bottom: 15px; }
-    input { padding: 8px; font-size: 16px; background: #222; color: #fff; border: 1px solid #333; border-radius: 4px; width: 60%; }
-    button { padding: 8px 12px; margin-left: 4px; font-size: 14px; background: #444; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #666; }
-    ul { list-style: none; margin-top: 20px; padding: 0; }
-    li { background: #1b1b1b; margin-bottom: 6px; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 10px; }
-    li button { margin-left: auto; background: #aa3333; }
-    li button:hover { background: #cc4444; }
-    li input[type="checkbox"] { transform: scale(1.3); }
-  </style>
+  <title>My Tasklist</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Mijn Taken</h1>
-  <input id="taskInput" placeholder="Nieuwe taak">
-  <button onclick="addTask()">Toevoegen</button>
+
+  <h1>Mijn taken</h1>
+
+  <!-- Invoer -->
+  <div class="input-row">
+    <input
+      id="taskInput"
+      type="text"
+      placeholder="Nieuwe taak..."
+      autocomplete="off"
+    >
+    <button id="addBtn">Toevoegen</button>
+  </div>
+
+  <!-- Takenlijst -->
   <ul id="tasks"></ul>
 
   <script>
+    const taskInput = document.getElementById("taskInput");
+    const addBtn = document.getElementById("addBtn");
+    const tasksUl = document.getElementById("tasks");
+
     async function loadTasks() {
       const res = await fetch("/api/tasks");
       const tasks = await res.json();
-      const ul = document.getElementById("tasks");
-      ul.innerHTML = "";
+      tasksUl.innerHTML = "";
 
-      tasks.forEach(t => {
+      tasks.forEach(task => {
         const li = document.createElement("li");
+
         li.innerHTML = `
-          <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleTask(${t.id})">
-          ${t.text}
-          <button onclick="deleteTask(${t.id})">X</button>
+          <input
+            type="checkbox"
+            ${task.done ? "checked" : ""}
+            onchange="toggleTask(${task.id})"
+          >
+          <span class="task-text ${task.done ? "done" : ""}">
+            ${task.text}
+          </span>
+          <button
+            class="delete-btn"
+            onclick="deleteTask(${task.id})"
+          >✕</button>
         `;
-        ul.appendChild(li);
+
+        tasksUl.appendChild(li);
       });
     }
 
     async function addTask() {
-      const input = document.getElementById("taskInput");
-      if (!input.value) return;
-      await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input.value }) });
-      input.value = "";
+      const text = taskInput.value.trim();
+      if (!text) return;
+
+      await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      taskInput.value = "";
       loadTasks();
     }
 
@@ -58,7 +82,16 @@
       loadTasks();
     }
 
+    // Enter = toevoegen
+    taskInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") addTask();
+    });
+
+    addBtn.addEventListener("click", addTask);
+
+    // Init
     loadTasks();
   </script>
+
 </body>
 </html>
