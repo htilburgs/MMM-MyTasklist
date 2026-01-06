@@ -1,6 +1,6 @@
 /* MagicMirror styling */
 .MMM-MyTasklist {
-  font-size: 24px;
+  font-size: 16px;
   line-height: 1.5;
   color: #fff;
 }
@@ -12,8 +12,8 @@
 }
 
 .MMM-MyTasklist li {
-  padding: 10px 12px;
-  margin-bottom: 6px;
+/*  padding: 10px 12px;
+  margin-bottom: 6px; */
   display: flex;
   align-items: center;
   gap: 10px;
