@@ -1,4 +1,6 @@
 # MMM-MyTasklist
+This a module for [Magic Mirror²](https://github.com/MichMich/MagicMirror). </br>
+This displays a simple Tasklist, you can update through a web frontend.
 
 ## Installation
 Clone this repository in your modules folder, and install dependencies:
@@ -33,4 +35,11 @@ Add the module to your modules array in your config.js.
   }
 }
 ```
+## Load update page for Tasklist
+Open a browser and type ```http://serverip address:8123```
+So if for example you're MagicMirror is on 192.168.0.48 then you go to ```http://192.168.0.48:8123```
+The update screen for MyTasklist will be loaded and you will be able to add, complete or delete tasks.
+
+NOTE: </br>
+with a touchscreen you're able to check the checkboxes on the mainscreen to complete the task </br>
 
