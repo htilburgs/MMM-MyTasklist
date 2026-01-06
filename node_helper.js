@@ -15,10 +15,9 @@ module.exports = NodeHelper.create({
     this.app.use(express.json());
     this.app.use(express.static(path.join(__dirname, "public")));
 
-    // API: taken ophalen
+    // API: taken
     this.app.get("/api/tasks", (req, res) => res.json(this.loadTasks()));
 
-    // API: taak toevoegen
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if (!text) return res.status(400).send("Geen tekst opgegeven");
@@ -30,7 +29,6 @@ module.exports = NodeHelper.create({
       res.sendStatus(200);
     });
 
-    // API: toggle taak
     this.app.post("/api/toggle/:id", (req, res) => {
       const tasks = this.loadTasks();
       const task = tasks.find(t => t.id == req.params.id);
@@ -40,7 +38,6 @@ module.exports = NodeHelper.create({
       res.sendStatus(200);
     });
 
-    // API: delete taak
     this.app.post("/api/delete/:id", (req, res) => {
       let tasks = this.loadTasks();
       tasks = tasks.filter(t => t.id != req.params.id);
@@ -49,7 +46,7 @@ module.exports = NodeHelper.create({
       res.sendStatus(200);
     });
 
-    // API: vertalingen
+    // vertalingen
     this.app.get("/api/lang", (req, res) => {
       const lang = req.query.lang || "nl";
       const translations = require(path.join(__dirname, "translations", `${lang}.json`));
@@ -63,7 +60,6 @@ module.exports = NodeHelper.create({
     if (notification === "GET_TASKS") {
       this.sendSocketNotification("TASKS", this.loadTasks());
     }
-
     if (notification === "TOGGLE_TASK") {
       const tasks = this.loadTasks();
       const task = tasks.find(t => t.id === payload);
