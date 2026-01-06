@@ -1,5 +1,4 @@
 Module.register("MMM-MyTasklist", {
-  // Default config
   defaults: {
     updateInterval: 300000, // 5 minuten
     showCompleted: true,    // toon voltooide taken
@@ -22,11 +21,12 @@ Module.register("MMM-MyTasklist", {
     return {
       NO_TASKS: this.translate("NO_TASKS"),
       ADD_TASK: this.translate("ADD_TASK"),
-      PLACEHOLDER: this.translate("PLACEHOLDER")
+      PLACEHOLDER: this.translate("PLACEHOLDER"),
+      TASK_COUNT: this.translate("TASK_COUNT") || "Taken"
     };
   },
 
-  // CSS voor module
+  // CSS
   getStyles() {
     return ["MMM-MyTasklist.css"];
   },
@@ -59,7 +59,13 @@ Module.register("MMM-MyTasklist", {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
     }
 
-    // Taken toevoegen aan lijst
+    // Counter bovenaan
+    const counter = document.createElement("div");
+    counter.className = "task-counter";
+    counter.textContent = `${visibleTasks.length} ${this.texts.TASK_COUNT}`;
+    wrapper.appendChild(counter);
+
+    // Taken toevoegen
     visibleTasks.forEach(task => ul.appendChild(this.createTaskElement(task)));
 
     wrapper.appendChild(ul);
