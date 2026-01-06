@@ -1,5 +1,6 @@
 {
   "NO_TASKS": "No tasks",
   "ADD_TASK": "Add",
-  "PLACEHOLDER": "New task..."
+  "PLACEHOLDER": "New task...",
+  "TASK_COUNT": "Tasks"
 }
