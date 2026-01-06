@@ -4,32 +4,33 @@
   <meta charset="UTF-8">
   <title>My Tasklist</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Styles -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
   <h1>Mijn taken</h1>
 
-  <!-- Invoer -->
   <div class="input-row">
-    <input
-      id="taskInput"
-      type="text"
-      placeholder="Nieuwe taak..."
-      autocomplete="off"
-    >
-    <button id="addBtn">Toevoegen</button>
+    <input id="taskInput" placeholder="">
+    <button id="addBtn"></button>
   </div>
 
-  <!-- Takenlijst -->
   <ul id="tasks"></ul>
 
   <script>
     const taskInput = document.getElementById("taskInput");
     const addBtn = document.getElementById("addBtn");
     const tasksUl = document.getElementById("tasks");
+
+    // laad vertalingen
+    async function loadLang() {
+      const lang = window.navigator.language.slice(0,2) || "nl";
+      const res = await fetch(`/api/lang?lang=${lang}`);
+      const t = await res.json();
+      window.MM_TASKS_PLACEHOLDER = t.PLACEHOLDER;
+      window.MM_TASKS_ADD = t.ADD_TASK;
+      taskInput.placeholder = t.PLACEHOLDER;
+      addBtn.textContent = t.ADD_TASK;
+    }
 
     async function loadTasks() {
       const res = await fetch("/api/tasks");
@@ -38,22 +39,11 @@
 
       tasks.forEach(task => {
         const li = document.createElement("li");
-
         li.innerHTML = `
-          <input
-            type="checkbox"
-            ${task.done ? "checked" : ""}
-            onchange="toggleTask(${task.id})"
-          >
-          <span class="task-text ${task.done ? "done" : ""}">
-            ${task.text}
-          </span>
-          <button
-            class="delete-btn"
-            onclick="deleteTask(${task.id})"
-          >✕</button>
+          <input type="checkbox" ${task.done ? "checked" : ""} onchange="toggleTask(${task.id})">
+          <span class="task-text ${task.done ? "done" : ""}">${task.text}</span>
+          <button class="delete-btn" onclick="deleteTask(${task.id})">✕</button>
         `;
-
         tasksUl.appendChild(li);
       });
     }
@@ -61,37 +51,25 @@
     async function addTask() {
       const text = taskInput.value.trim();
       if (!text) return;
-
-      await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
-
+      await fetch("/api/tasks", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({text}) });
       taskInput.value = "";
       loadTasks();
     }
 
     async function toggleTask(id) {
-      await fetch(`/api/toggle/${id}`, { method: "POST" });
+      await fetch(`/api/toggle/${id}`, { method:"POST" });
       loadTasks();
     }
 
     async function deleteTask(id) {
-      await fetch(`/api/delete/${id}`, { method: "POST" });
+      await fetch(`/api/delete/${id}`, { method:"POST" });
       loadTasks();
     }
 
-    // Enter = toevoegen
-    taskInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") addTask();
-    });
-
     addBtn.addEventListener("click", addTask);
+    taskInput.addEventListener("keypress", e => { if(e.key==="Enter") addTask(); });
 
-    // Init
-    loadTasks();
+    loadLang().then(loadTasks);
   </script>
-
 </body>
 </html>
