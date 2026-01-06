@@ -2,6 +2,9 @@
 This a module for [Magic Mirror²](https://github.com/MichMich/MagicMirror). </br>
 This displays a simple Tasklist, you can update through a web frontend.
 
+<img width="319" height="202" alt="image" src="https://github.com/user-attachments/assets/e76f7664-4f41-49d2-b4f6-5a76922591c0" />
+
+
 ## Installation
 Clone this repository in your modules folder, and install dependencies:
 
