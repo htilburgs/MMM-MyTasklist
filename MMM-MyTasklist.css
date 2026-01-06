@@ -33,3 +33,10 @@
   text-decoration:line-through; 
   opacity:0.5; 
 }
+
+.task-counter {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #fff;
+}
