@@ -71,9 +71,7 @@ Module.register("MMM-MyTasklist", {
   },
 
   suspend() {
-    if (this.updateTimer) {
-      clearInterval(this.updateTimer);
-    }
+    if (this.updateTimer) clearInterval(this.updateTimer);
   },
 
   resume() {
