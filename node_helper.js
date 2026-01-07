@@ -17,7 +17,8 @@ module.exports = NodeHelper.create({
 
     // GET all tasks
     this.app.get("/api/tasks", (req, res) => {
-      res.json(this.loadTasks());
+      const tasks = this.loadTasks();
+      res.json(tasks);
     });
 
     // ADD new task
@@ -29,7 +30,7 @@ module.exports = NodeHelper.create({
       tasks.push({ id: Date.now(), text, done: false });
       this.saveTasks(tasks);
       this.sendSocketNotification("TASKS", tasks);
-      res.json(tasks); // stuur direct terug
+      res.json(tasks);
     });
 
     // TOGGLE task
@@ -39,7 +40,7 @@ module.exports = NodeHelper.create({
       if (task) task.done = !task.done;
       this.saveTasks(tasks);
       this.sendSocketNotification("TASKS", tasks);
-      res.json(tasks); // stuur de nieuwe lijst terug
+      res.json(tasks);
     });
 
     // DELETE task
@@ -48,7 +49,7 @@ module.exports = NodeHelper.create({
       tasks = tasks.filter(t => t.id != req.params.id);
       this.saveTasks(tasks);
       this.sendSocketNotification("TASKS", tasks);
-      res.json(tasks); // stuur de nieuwe lijst terug
+      res.json(tasks);
     });
 
     // REORDER tasks
@@ -57,10 +58,10 @@ module.exports = NodeHelper.create({
       if (!Array.isArray(newTasks)) return res.status(400).send("Invalid tasks array");
       this.saveTasks(newTasks);
       this.sendSocketNotification("TASKS", newTasks);
-      res.json(newTasks); // stuur de nieuwe lijst terug
+      res.json(newTasks);
     });
 
-    // Load translations
+    // GET translations
     this.app.get("/api/lang", (req, res) => {
       const lang = req.query.lang || "nl";
       const translationsFile = path.join(__dirname, "translations", `${lang}.json`);
@@ -78,15 +79,6 @@ module.exports = NodeHelper.create({
   socketNotificationReceived(notification, payload) {
     if (notification === "GET_TASKS") {
       this.sendSocketNotification("TASKS", this.loadTasks());
-    }
-    if (notification === "TOGGLE_TASK") {
-      const tasks = this.loadTasks();
-      const task = tasks.find(t => t.id === payload);
-      if (task) {
-        task.done = !task.done;
-        this.saveTasks(tasks);
-        this.sendSocketNotification("TASKS", tasks);
-      }
     }
   },
 
