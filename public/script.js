@@ -23,11 +23,13 @@ async function loadTranslations(){
   try{ const res=await fetch(`/api/lang?lang=${lang}`); translations=await res.json(); }catch{ translations={}; }
   applyTranslations();
 }
+
 function applyTranslations(){
   taskText.placeholder = translations.PLACEHOLDER||"New task...";
   addBtn.textContent = translations.ADD_BUTTON||"Add";
   document.querySelectorAll(".delete-btn").forEach(btn=>btn.textContent=translations.DELETE_BUTTON||"Delete");
 }
+
 langSelect.addEventListener("change", async()=>{ lang=langSelect.value; await loadTranslations(); });
 
 function renderTasks(){
@@ -64,27 +66,20 @@ function renderTasks(){
     li.appendChild(deleteBtn);
 
     // Drag & Drop
-    let dragSrcIndex=null;
-
     handle.addEventListener("mousedown",()=>{ li.draggable=true; });
 
-    li.addEventListener("dragstart",()=>{ 
-      dragSrcIndex=[...taskList.children].indexOf(li); 
-      li.classList.add("dragging"); 
-    });
+    li.addEventListener("dragstart",()=>{ li.classList.add("dragging"); });
 
-    li.addEventListener("dragover",e=>{
+    li.addEventListener("dragover", e=>{
       e.preventDefault();
       const dragging=document.querySelector(".dragging");
       const after=getDragAfterElement(taskList,e.clientY);
 
-      // Clear previous highlights
       taskList.querySelectorAll(".drop-target").forEach(el=>el.classList.remove("drop-target"));
 
-      if(!after){
-        taskList.appendChild(dragging);
-      } else {
-        after.classList.add("drop-target"); // highlight drop
+      if(!after) taskList.appendChild(dragging);
+      else {
+        after.classList.add("drop-target");
         taskList.insertBefore(dragging,after);
       }
     });
@@ -93,6 +88,7 @@ function renderTasks(){
       li.classList.remove("dragging");
       li.draggable=false;
       taskList.querySelectorAll(".drop-target").forEach(el=>el.classList.remove("drop-target"));
+
       const orderedIds=[...taskList.children].map(li=>Number(li.dataset.id));
       await fetch("/api/reorder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderedIds})});
     });
