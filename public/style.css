@@ -91,7 +91,7 @@ input[type=checkbox] {
   cursor: pointer;
 }
 
-/* Optional: nicer scrollbar */
+/* Nicer scrollbar */
 ul::-webkit-scrollbar {
   width: 8px;
 }
