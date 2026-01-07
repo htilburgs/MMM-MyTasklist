@@ -3,5 +3,8 @@
   "TASKS_TITLE": "Meine Aufgabenliste",
   "PLACEHOLDER": "Neue Aufgabe...",
   "ADD_BUTTON": "Hinzufügen",
-  "DELETE_BUTTON": "Löschen"
+  "DELETE_BUTTON": "Löschen",
+  "FILTER_ALL": "Alle",
+  "FILTER_ACTIVE": "Aktiv",
+  "FILTER_DONE": "Erledigt"
 }
