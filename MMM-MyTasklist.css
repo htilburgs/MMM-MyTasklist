@@ -1,5 +1,5 @@
 .MMM-MyTasklist { 
-  font-size:24px; 
+  font-size:16px; 
   line-height:1.5; 
   color:#fff; 
 }
@@ -15,7 +15,6 @@
   align-items:center; 
   gap:10px; 
   border-radius:6px; 
-  background:rgba(255,255,255,0.05); 
   cursor:pointer; 
   transition:background 0.2s ease; 
 }

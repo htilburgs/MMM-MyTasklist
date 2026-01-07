@@ -1,7 +1,5 @@
 {
   "NO_TASKS": "No tasks",
   "ADD_TASK": "Add",
-  "PLACEHOLDER": "New task...",
-  "TASK_COUNT_SINGULAR": "Task",
-  "TASK_COUNT_PLURAL": "Tasks"
+  "PLACEHOLDER": "New task..."
 }
