@@ -1,15 +1,14 @@
 Module.register("MMM-MyTasklist", {
   defaults: {
     updateInterval: 300000, // 5 minuten
-    showCompleted: true,    // toon voltooide taken
-    maxTasks: null          // null = geen limiet, anders bijv. 5
+    showCompleted: true,
+    maxTasks: null
   },
 
   start() {
     this.tasks = [];
     this.sendSocketNotification("GET_TASKS");
 
-    // Periodieke update
     this.updateTimer = setInterval(() => {
       this.sendSocketNotification("GET_TASKS");
     }, this.config.updateInterval);
@@ -21,7 +20,8 @@ Module.register("MMM-MyTasklist", {
 
   socketNotificationReceived(notification, payload) {
     if (notification === "TASKS") {
-      this.tasks = Array.isArray(payload) ? payload : [];
+      // payload is object: { tasks_title, tasks }
+      this.tasks = Array.isArray(payload.tasks) ? payload.tasks : [];
       this.updateDom();
     }
   },
@@ -36,16 +36,12 @@ Module.register("MMM-MyTasklist", {
     }
 
     const ul = document.createElement("ul");
-
-    // Filter op showCompleted
     let visibleTasks = this.tasks.filter(task => this.config.showCompleted || !task.done);
 
-    // Limiteer aantal taken als maxTasks is ingesteld
     if (this.config.maxTasks && visibleTasks.length > this.config.maxTasks) {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
     }
 
-    // Taken toevoegen
     visibleTasks.forEach(task => ul.appendChild(this.createTaskElement(task)));
 
     wrapper.appendChild(ul);
