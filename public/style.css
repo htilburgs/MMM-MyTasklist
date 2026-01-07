@@ -6,11 +6,30 @@ body {
   padding: 0 10px;
 }
 
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
 #langSelect {
-  display: block;
-  margin: 0 auto 20px;
   padding: 6px 12px;
   font-size: 1rem;
+}
+
+.filters .filter-btn {
+  margin-left: 5px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+.filters .filter-btn.active {
+  background: #0056b3;
 }
 
 form {
@@ -26,7 +45,7 @@ input[type=text] {
   border-radius: 5px 0 0 5px;
 }
 
-button {
+button#addBtn {
   padding: 10px 20px;
   font-size: 1rem;
   border: none;
@@ -36,7 +55,7 @@ button {
   border-radius: 0 5px 5px 0;
 }
 
-button:hover {
+button#addBtn:hover {
   background: #0056b3;
 }
 
@@ -91,7 +110,6 @@ input[type=checkbox] {
   cursor: pointer;
 }
 
-/* Nicer scrollbar */
 ul::-webkit-scrollbar {
   width: 8px;
 }
