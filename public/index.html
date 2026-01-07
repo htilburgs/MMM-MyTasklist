@@ -12,101 +12,39 @@
       padding: 0 10px;
       background: #f0f0f0;
     }
-
-    h1 {
-      text-align: center;
-      color: #333;
-      margin-bottom: 10px;
-    }
-
-    #langSelect {
-      display: block;
-      margin: 0 auto 20px auto;
-      font-size: 1rem;
-      padding: 6px 12px;
-    }
-
-    form {
-      display: flex;
-      margin-bottom: 20px;
-    }
-
+    h1 { text-align: center; color: #333; margin-bottom: 10px; }
+    #langSelect { display: block; margin: 0 auto 20px auto; font-size: 1rem; padding: 6px 12px; }
+    form { display: flex; margin-bottom: 20px; }
     input[type=text] {
-      flex: 1;
-      padding: 10px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 5px 0 0 5px;
-      outline: none;
+      flex: 1; padding: 10px; font-size: 1rem;
+      border: 1px solid #ccc; border-radius: 5px 0 0 5px; outline: none;
     }
-
     button {
-      padding: 10px 20px;
-      font-size: 1rem;
-      border: none;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-      border-radius: 0 5px 5px 0;
-      transition: background 0.2s;
+      padding: 10px 20px; font-size: 1rem; border: none; background: #007bff;
+      color: white; cursor: pointer; border-radius: 0 5px 5px 0; transition: background 0.2s;
     }
-
     button:hover { background: #0056b3; }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      max-height: 500px;
-      overflow-y: auto;
-    }
-
+    ul { list-style: none; padding: 0; margin: 0; max-height: 500px; overflow-y: auto; }
     li {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 15px;
-      margin-bottom: 10px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      cursor: grab;
-      transition: background 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 15px; margin-bottom: 10px; background: #fff;
+      border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: grab; transition: background 0.2s, transform 0.1s;
     }
-
     li.dragging { opacity: 0.5; background: #e0e0e0; }
     li.done label { text-decoration: line-through; color: #999; }
-
-    label {
-      flex: 1;
-      font-size: 1.1rem;
-      cursor: pointer;
-    }
-
+    label { flex: 1; font-size: 1.1rem; cursor: pointer; }
     .delete-btn {
-      background: #dc3545;
-      border: none;
-      color: white;
-      padding: 6px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.2s;
+      background: #dc3545; border: none; color: white; padding: 6px 12px;
+      border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;
     }
-
     .delete-btn:hover { background: #a71d2a; }
-
-    input[type=checkbox] {
-      margin-right: 10px;
-      transform: scale(1.3);
-      cursor: pointer;
-    }
+    input[type=checkbox] { margin-right: 10px; transform: scale(1.3); cursor: pointer; }
   </style>
 </head>
 <body>
   <h1 id="title">MyTasklist</h1>
 
-  <!-- Taalselector -->
   <select id="langSelect">
     <option value="nl">Nederlands</option>
     <option value="en">English</option>
@@ -134,55 +72,47 @@
     let lang = navigator.language.startsWith("en") ? "en" :
                navigator.language.startsWith("de") ? "de" :
                navigator.language.startsWith("fr") ? "fr" : "nl";
-
     langSelect.value = lang;
 
-    /* =========================
-       Vertalingen ophalen en toepassen
-    ========================= */
+    // =========================
+    // Vertalingen ophalen
+    // =========================
     async function loadTranslations() {
       try {
         const res = await fetch(`/api/lang?lang=${lang}`);
         translations = await res.json();
-      } catch (e) {
-        console.error("Kon vertalingen niet laden:", e);
+      } catch {
         translations = {};
       }
-
-      // Plaats fallback waarden
+      // toepassen
       titleElem.textContent = translations.TASKS_TITLE || "MyTasklist";
       taskText.placeholder = translations.PLACEHOLDER || "New task...";
       addBtn.textContent = translations.ADD_BUTTON || "Add";
 
-      // Delete buttons in lijst bijwerken
-      const deleteLabel = translations.DELETE_BUTTON || "Delete";
       document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.textContent = deleteLabel;
+        btn.textContent = translations.DELETE_BUTTON || "Delete";
       });
     }
 
     langSelect.addEventListener("change", async () => {
       lang = langSelect.value;
       await loadTranslations();
+      await loadTasks(); // opnieuw renderen met juiste labels
     });
 
-    /* =========================
-       Taken laden en renderen
-    ========================= */
+    // =========================
+    // Taken laden en renderen
+    // =========================
     async function loadTasks() {
       try {
         const res = await fetch("/api/tasks");
         tasks = await res.json();
-      } catch (e) {
-        console.error("Kon taken niet laden:", e);
-        tasks = [];
-      }
+      } catch { tasks = []; }
       renderTasks();
     }
 
     function renderTasks() {
       taskList.innerHTML = "";
-
       const deleteLabel = translations.DELETE_BUTTON || "Delete";
 
       tasks.forEach(task => {
@@ -213,9 +143,9 @@
       });
     }
 
-    /* =========================
-       Drag & drop logica
-    ========================= */
+    // =========================
+    // Drag & drop
+    // =========================
     taskList.addEventListener("dragover", e => {
       e.preventDefault();
       const dragging = document.querySelector(".dragging");
@@ -228,8 +158,8 @@
       const draggableElements = [...container.querySelectorAll("li:not(.dragging)")];
       return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+        const offset = y - box.top - box.height/2;
+        if (offset < 0 && offset > closest.offset) return { offset, element: child };
         return closest;
       }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
@@ -244,40 +174,34 @@
       loadTasks();
     }
 
-    /* =========================
-       API functies: add, toggle, delete
-    ========================= */
+    // =========================
+    // Add / toggle / delete
+    // =========================
     taskForm.addEventListener("submit", async e => {
       e.preventDefault();
       const text = taskText.value.trim();
       if (!text) return;
-
-      await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-      });
-
+      await fetch("/api/tasks", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ text }) });
       taskText.value = "";
-      loadTasks();
+      await loadTasks();
     });
 
     async function toggleTask(id) {
       await fetch(`/api/toggle/${id}`, { method: "POST" });
-      loadTasks();
+      await loadTasks();
     }
 
     async function deleteTask(id) {
       await fetch(`/api/delete/${id}`, { method: "POST" });
-      loadTasks();
+      await loadTasks();
     }
 
-    /* =========================
-       INIT
-    ========================= */
+    // =========================
+    // INIT
+    // =========================
     async function init() {
-      await loadTasks();        // eerst taken laden
-      await loadTranslations(); // daarna vertalingen toepassen
+      await loadTranslations(); // eerst vertalingen
+      await loadTasks();        // daarna taken renderen
     }
 
     init();
