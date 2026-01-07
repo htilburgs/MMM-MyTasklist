@@ -141,8 +141,13 @@
        Vertalingen ophalen en toepassen
     ========================= */
     async function loadTranslations() {
-      const res = await fetch(`/api/lang?lang=${lang}`);
-      translations = await res.json();
+      try {
+        const res = await fetch(`/api/lang?lang=${lang}`);
+        translations = await res.json();
+      } catch (e) {
+        console.error("Kon vertalingen niet laden:", e);
+        translations = {}; // fallback
+      }
 
       titleElem.textContent = translations.TASKS_TITLE || "MyTasklist";
       taskText.placeholder = translations.PLACEHOLDER || "New task...";
@@ -163,13 +168,20 @@
        Taken laden en renderen
     ========================= */
     async function loadTasks() {
-      const res = await fetch("/api/tasks");
-      tasks = await res.json();
+      try {
+        const res = await fetch("/api/tasks");
+        tasks = await res.json();
+      } catch (e) {
+        console.error("Kon taken niet laden:", e);
+        tasks = [];
+      }
       renderTasks();
     }
 
     function renderTasks() {
       taskList.innerHTML = "";
+
+      const deleteLabel = translations.DELETE_BUTTON || "Delete";
 
       tasks.forEach(task => {
         const li = document.createElement("li");
@@ -187,7 +199,7 @@
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
-        deleteBtn.textContent = translations.DELETE_BUTTON || "Delete";
+        deleteBtn.textContent = deleteLabel;
         deleteBtn.addEventListener("click", () => deleteTask(task.id));
 
         li.appendChild(label);
@@ -262,8 +274,8 @@
        INIT
     ========================= */
     async function init() {
-      await loadTranslations();
-      await loadTasks();
+      await loadTasks();        // eerst taken laden
+      await loadTranslations(); // daarna vertalingen toepassen
     }
 
     init();
