@@ -47,7 +47,7 @@ const tasksTitle = document.getElementById("tasksTitle");
 const langSelect = document.getElementById("langSelect");
 const addBtn = document.getElementById("addBtn");
 
-let tasks = [];
+let tasksData = { tasks_title: "Mijn Taken", tasks: [] };
 let translations = {};
 let lang = navigator.language.startsWith("en")?"en":navigator.language.startsWith("de")?"de":navigator.language.startsWith("fr")?"fr":"nl";
 langSelect.value = lang;
@@ -57,8 +57,10 @@ const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){
-    tasks = data.tasks.tasks; // taken array
-    renderTasks(tasks);
+    // Altijd object met tasks array
+    tasksData = data.tasks;
+    tasksTitle.textContent = translations.TASKS_TITLE || tasksData.tasks_title || "Mijn Taken";
+    renderTasks(tasksData.tasks);
   }
 };
 
@@ -75,7 +77,7 @@ async function loadTranslations(){
 
 function applyTranslations(){
   // Titel boven taalselector
-  tasksTitle.textContent = translations.TASKS_TITLE || "Mijn Taken";
+  tasksTitle.textContent = translations.TASKS_TITLE || tasksData.tasks_title || "Mijn Taken";
 
   // Placeholder & knoppen
   taskText.placeholder = translations.PLACEHOLDER || "New task...";
