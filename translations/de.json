@@ -1,5 +1,7 @@
 {
   "NO_TASKS": "Keine Aufgaben",
-  "ADD_TASK": "Hinzufügen",
-  "PLACEHOLDER": "Neue Aufgabe..."
+  "TASKS_TITLE": "Meine Aufgabenliste",
+  "PLACEHOLDER": "Neue Aufgabe...",
+  "ADD_BUTTON": "Hinzufügen",
+  "DELETE_BUTTON": "Löschen"
 }
