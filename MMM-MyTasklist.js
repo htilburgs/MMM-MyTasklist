@@ -1,15 +1,18 @@
 Module.register("MMM-MyTasklist", {
   defaults: {
     updateInterval: 300000, // 5 minuten
-    showCompleted: true,    // toon voltooide taken
-    maxTasks: null          // null = geen limiet, anders bijv. 5
+    showCompleted: true,
+    maxTasks: null
   },
 
   start() {
     this.tasks = [];
     this.sendSocketNotification("GET_TASKS");
 
-    // Periodieke update
+    this.startUpdateTimer();
+  },
+
+  startUpdateTimer() {
     this.updateTimer = setInterval(() => {
       this.sendSocketNotification("GET_TASKS");
     }, this.config.updateInterval);
@@ -19,10 +22,17 @@ Module.register("MMM-MyTasklist", {
     return ["MMM-MyTasklist.css"];
   },
 
+  getTranslations() {
+    return {
+      nl: "translations/nl.json",
+      en: "translations/en.json"
+    };
+  },
+
   socketNotificationReceived(notification, payload) {
     if (notification === "TASKS") {
       this.tasks = Array.isArray(payload) ? payload : [];
-      this.updateDom();
+      this.updateDom(300);
     }
   },
 
@@ -31,22 +41,27 @@ Module.register("MMM-MyTasklist", {
     wrapper.className = "MMM-MyTasklist";
 
     if (!this.tasks.length) {
-      wrapper.innerHTML = this.translate("NO_TASKS") || "Geen taken";
+      wrapper.textContent = this.translate("NO_TASKS");
       return wrapper;
     }
 
     const ul = document.createElement("ul");
 
-    // Filter op showCompleted
-    let visibleTasks = this.tasks.filter(task => this.config.showCompleted || !task.done);
+    let visibleTasks = this.tasks.filter(
+      task => this.config.showCompleted || !task.done
+    );
 
-    // Limiteer aantal taken als maxTasks is ingesteld
-    if (this.config.maxTasks && visibleTasks.length > this.config.maxTasks) {
+    // Sorteer: onafgerond eerst
+    visibleTasks.sort((a, b) => a.done - b.done);
+
+    // maxTasks correct afhandelen (ook 0)
+    if (Number.isInteger(this.config.maxTasks)) {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
     }
 
-    // Taken toevoegen
-    visibleTasks.forEach(task => ul.appendChild(this.createTaskElement(task)));
+    visibleTasks.forEach(task => {
+      ul.appendChild(this.createTaskElement(task));
+    });
 
     wrapper.appendChild(ul);
     return wrapper;
@@ -54,18 +69,26 @@ Module.register("MMM-MyTasklist", {
 
   createTaskElement(task) {
     const li = document.createElement("li");
-    li.classList.add("task-item");
+    li.className = "task-item";
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = task.done;
+
     checkbox.addEventListener("change", () => {
+      // Optimistische UI-update
+      task.done = checkbox.checked;
+      this.updateDom(200);
+
       this.sendSocketNotification("TOGGLE_TASK", task.id);
     });
 
     const span = document.createElement("span");
     span.textContent = task.text;
-    if (task.done) span.classList.add("done");
+
+    if (task.done) {
+      span.classList.add("done");
+    }
 
     li.appendChild(checkbox);
     li.appendChild(span);
@@ -74,10 +97,14 @@ Module.register("MMM-MyTasklist", {
   },
 
   suspend() {
-    if (this.updateTimer) clearInterval(this.updateTimer);
+    if (this.updateTimer) {
+      clearInterval(this.updateTimer);
+      this.updateTimer = null;
+    }
   },
 
   resume() {
     this.sendSocketNotification("GET_TASKS");
+    this.startUpdateTimer();
   }
 });
