@@ -3,5 +3,8 @@
   "TASKS_TITLE": "Ma liste de tâches",
   "PLACEHOLDER": "Nouvelle tâche...",
   "ADD_BUTTON": "Ajouter",
-  "DELETE_BUTTON": "Supprimer"
+  "DELETE_BUTTON": "Supprimer",
+  "FILTER_ALL": "Tout",
+  "FILTER_ACTIVE": "Actif",
+  "FILTER_DONE": "Terminé"
 }
