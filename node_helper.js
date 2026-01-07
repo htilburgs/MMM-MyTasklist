@@ -20,7 +20,7 @@ module.exports = NodeHelper.create({
     const sendUpdated = (tasksData, res) => {
       this.saveTasks(tasksData);
       this.broadcastTasks(tasksData);
-      this.sendSocketNotification("TASKS", tasksData);
+      this.sendSocketNotification("TASKS", tasksData.tasks); // alleen array voor Mirror
       if(res) res.json(tasksData);
     };
 
@@ -77,20 +77,20 @@ module.exports = NodeHelper.create({
 
   broadcastTasks(tasksData) {
     const message = JSON.stringify({ type: "TASKS", tasks: tasksData });
-    this.clients.forEach(ws => { if(ws.readyState === WebSocket.OPEN) ws.send(message); });
+    this.clients.forEach(ws => { if(ws.readyState===WebSocket.OPEN) ws.send(message); });
   },
 
   socketNotificationReceived(notification, payload) {
     if(notification === "GET_TASKS") {
       const tasksData = this.loadTasks();
-      this.sendSocketNotification("TASKS", tasksData);
+      this.sendSocketNotification("TASKS", tasksData.tasks); // array voor Mirror
     }
     if(notification === "TOGGLE_TASK") {
       const tasksData = this.loadTasks();
       const task = tasksData.tasks.find(t => t.id === payload);
       if(task) task.done = !task.done;
       this.saveTasks(tasksData);
-      this.sendSocketNotification("TASKS", tasksData);
+      this.sendSocketNotification("TASKS", tasksData.tasks);
       this.broadcastTasks(tasksData);
     }
   },
