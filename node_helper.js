@@ -11,12 +11,10 @@ module.exports = NodeHelper.create({
 
     console.log("MMM-MyTasklist helper gestart");
 
-    // Express server opzetten
+    // Express server
     this.app = express();
     this.app.use(express.json());
     this.app.use(express.static(path.join(__dirname, "public"))); // serve index.html automatisch
-
-    // Start server op poort 8123
     this.app.listen(8123, () => {
       console.log("MMM-MyTasklist webinterface draait op poort 8123");
     });
@@ -56,9 +54,11 @@ module.exports = NodeHelper.create({
      EXPRESS API
   ========================= */
   setupAPI() {
+    const self = this;
+
     // GET alle taken
     this.app.get("/api/tasks", (req, res) => {
-      res.json(this.loadTasks());
+      res.json(self.loadTasks());
     });
 
     // POST: nieuwe taak
@@ -66,27 +66,24 @@ module.exports = NodeHelper.create({
       const { text } = req.body;
       if (!text) return res.status(400).send("Geen tekst opgegeven");
 
-      const tasks = this.loadTasks();
+      const tasks = self.loadTasks();
       tasks.push({ id: Date.now(), text, done: false });
 
-      this.saveAndBroadcast(tasks);
+      self.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
 
     // POST: toggle done/undone
     this.app.post("/api/toggle/:id", (req, res) => {
-      const tasks = this.toggleTask(req.params.id);
-      this.saveAndBroadcast(tasks);
+      const tasks = self.toggleTask(req.params.id);
+      self.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
 
     // POST: verwijder taak
     this.app.post("/api/delete/:id", (req, res) => {
-      const id = Number(req.params.id);
-      let tasks = this.loadTasks();
-      tasks = tasks.filter(t => t.id !== id);
-
-      this.saveAndBroadcast(tasks);
+      const tasks = self.loadTasks().filter(t => t.id != req.params.id);
+      self.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
 
@@ -95,7 +92,7 @@ module.exports = NodeHelper.create({
       const tasks = req.body.tasks;
       if (!Array.isArray(tasks)) return res.status(400).send("Invalid data");
 
-      this.saveAndBroadcast(tasks);
+      self.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
   },
