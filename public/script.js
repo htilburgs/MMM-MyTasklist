@@ -6,28 +6,18 @@ const taskForm = document.getElementById("taskForm");
 const taskText = document.getElementById("taskText");
 const langSelect = document.getElementById("langSelect");
 const addBtn = document.getElementById("addBtn");
+const filterBtns = document.querySelectorAll(".filter-btn");
 
 // ===================
 // State
 // ===================
-let tasks = [];
+let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
 let translations = {};
-let lang = navigator.language.startsWith("en") ? "en" :
+let lang = localStorage.getItem("lang") || (navigator.language.startsWith("en") ? "en" :
            navigator.language.startsWith("de") ? "de" :
-           navigator.language.startsWith("fr") ? "fr" : "nl";
+           navigator.language.startsWith("fr") ? "fr" : "nl");
 langSelect.value = lang;
-
-// ===================
-// WebSocket Realtime
-// ===================
-const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
-ws.onmessage = event => {
-  const data = JSON.parse(event.data);
-  if (data.type === "TASKS") {
-    tasks = data.tasks;
-    renderTasks();
-  }
-};
+let currentFilter = "all";
 
 // ===================
 // Translations
@@ -40,6 +30,7 @@ async function loadTranslations() {
     translations = {};
   }
   applyTranslations();
+  localStorage.setItem("lang", lang);
 }
 
 function applyTranslations() {
@@ -60,11 +51,24 @@ langSelect.addEventListener("change", async () => {
 // ===================
 function renderTasks() {
   taskList.innerHTML = "";
-  tasks.forEach(task => {
+
+  let filteredTasks = tasks;
+  if (currentFilter === "active") filteredTasks = tasks.filter(t => !t.done);
+  else if (currentFilter === "done") filteredTasks = tasks.filter(t => t.done);
+
+  filteredTasks.forEach(task => {
     const li = document.createElement("li");
     li.dataset.id = task.id;
+    li.draggable = true;
     if (task.done) li.classList.add("done");
 
+    // Drag events
+    li.addEventListener("dragstart", dragStart);
+    li.addEventListener("dragover", dragOver);
+    li.addEventListener("drop", dragDrop);
+    li.addEventListener("dragend", dragEnd);
+
+    // Checkbox + label
     const label = document.createElement("label");
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -73,6 +77,7 @@ function renderTasks() {
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode(task.text));
 
+    // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-btn";
     deleteBtn.addEventListener("click", () => deleteTask(task.id));
@@ -82,49 +87,82 @@ function renderTasks() {
     taskList.appendChild(li);
   });
   applyTranslations();
+  saveTasks();
 }
 
 // ===================
 // Task Actions
 // ===================
-taskForm.addEventListener("submit", async e => {
+taskForm.addEventListener("submit", e => {
   e.preventDefault();
   const text = taskText.value.trim();
   if (!text) return;
 
-  // Optimistic UI update
-  const tempId = Date.now();
-  tasks.push({ id: tempId, text, done: false });
-  renderTasks();
+  const id = Date.now();
+  tasks.push({ id, text, done: false });
   taskText.value = "";
-
-  // Send to server
-  if (ws.readyState === WebSocket.OPEN) {
-    await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
-    });
-  }
+  renderTasks();
 });
 
-async function toggleTask(id) {
+function toggleTask(id) {
   const task = tasks.find(t => t.id === id);
   if (task) task.done = !task.done;
   renderTasks();
+}
 
-  if (ws.readyState === WebSocket.OPEN) {
-    await fetch(`/api/toggle/${id}`, { method: "POST" });
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  renderTasks();
+}
+
+// ===================
+// Drag & Drop
+// ===================
+let dragSrcEl = null;
+
+function dragStart(e) {
+  dragSrcEl = this;
+  e.dataTransfer.effectAllowed = "move";
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+}
+
+function dragDrop(e) {
+  e.stopPropagation();
+  if (dragSrcEl !== this) {
+    const srcId = dragSrcEl.dataset.id;
+    const tgtId = this.dataset.id;
+    const srcIndex = tasks.findIndex(t => t.id == srcId);
+    const tgtIndex = tasks.findIndex(t => t.id == tgtId);
+    tasks.splice(tgtIndex, 0, tasks.splice(srcIndex, 1)[0]);
+    renderTasks();
   }
 }
 
-async function deleteTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  renderTasks();
+function dragEnd() {
+  dragSrcEl = null;
+}
 
-  if (ws.readyState === WebSocket.OPEN) {
-    await fetch(`/api/delete/${id}`, { method: "POST" });
-  }
+// ===================
+// Filters
+// ===================
+filterBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    filterBtns.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.filter;
+    renderTasks();
+  });
+});
+
+// ===================
+// LocalStorage
+// ===================
+function saveTasks() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
 // ===================
@@ -132,5 +170,6 @@ async function deleteTask(id) {
 // ===================
 async function init() {
   await loadTranslations();
+  renderTasks();
 }
 init();
