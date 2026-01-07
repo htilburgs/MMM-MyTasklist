@@ -12,9 +12,6 @@ module.exports = NodeHelper.create({
     console.log("MMM-MyTasklist helper gestart");
   },
 
-  // ====================
-  // Setup Express + WebSocket
-  // ====================
   setupServer() {
     this.app = express();
     this.app.use(express.json());
@@ -31,7 +28,7 @@ module.exports = NodeHelper.create({
 
       this.saveTasks(tasks, data.lang);
       this.broadcastTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
 
       res.json({ tasks, lang: data.lang });
     });
@@ -45,7 +42,7 @@ module.exports = NodeHelper.create({
 
       this.saveTasks(tasks, data.lang);
       this.broadcastTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
 
       res.json({ tasks, lang: data.lang });
     });
@@ -58,7 +55,7 @@ module.exports = NodeHelper.create({
 
       this.saveTasks(tasks, data.lang);
       this.broadcastTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
 
       res.json({ tasks, lang: data.lang });
     });
@@ -70,12 +67,11 @@ module.exports = NodeHelper.create({
 
       const data = this.loadTasks();
       const tasks = data.tasks || [];
-      // Sorteer taken op basis van orderedIds
       const newTasks = orderedIds.map(id => tasks.find(t => t.id == id)).filter(Boolean);
 
       this.saveTasks(newTasks, data.lang);
       this.broadcastTasks(newTasks);
-      this.sendSocketNotification("TASKS", newTasks);
+      this.sendSocketNotification("TASKS", { tasks: newTasks, lang: data.lang });
 
       res.json({ tasks: newTasks, lang: data.lang });
     });
@@ -93,7 +89,6 @@ module.exports = NodeHelper.create({
 
       const data = this.loadTasks();
       this.saveTasks(data.tasks, lang);
-
       res.json({ success: true, lang });
     });
 
@@ -127,9 +122,6 @@ module.exports = NodeHelper.create({
     });
   },
 
-  // ====================
-  // WebSocket broadcast
-  // ====================
   broadcastTasks(tasks) {
     const message = JSON.stringify({ type: "TASKS", tasks });
     this.clients.forEach(ws => {
@@ -137,13 +129,10 @@ module.exports = NodeHelper.create({
     });
   },
 
-  // ====================
-  // MagicMirror socket notifications
-  // ====================
   socketNotificationReceived(notification, payload) {
     if (notification === "GET_TASKS") {
       const data = this.loadTasks();
-      this.sendSocketNotification("TASKS", data.tasks || []);
+      this.sendSocketNotification("TASKS", { tasks: data.tasks || [], lang: data.lang || "nl" });
     }
     if (notification === "TOGGLE_TASK") {
       const data = this.loadTasks();
@@ -151,14 +140,11 @@ module.exports = NodeHelper.create({
       const task = tasks.find(t => t.id === payload);
       if (task) task.done = !task.done;
       this.saveTasks(tasks, data.lang);
-      this.sendSocketNotification("TASKS", tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
       this.broadcastTasks(tasks);
     }
   },
 
-  // ====================
-  // Load / Save tasks.json
-  // ====================
   loadTasks() {
     try {
       if (!fs.existsSync(this.tasksFile)) {
