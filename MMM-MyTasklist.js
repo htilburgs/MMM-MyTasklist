@@ -1,6 +1,6 @@
 Module.register("MMM-MyTasklist", {
   defaults: {
-    updateInterval: 300000, // 5 minuten
+    updateInterval: 300000,
     showCompleted: true,
     maxTasks: null
   },
@@ -20,7 +20,7 @@ Module.register("MMM-MyTasklist", {
 
   socketNotificationReceived(notification, payload) {
     if (notification === "TASKS") {
-      // Mirror-module verwacht alleen array
+      // payload is een array van taken
       this.tasks = Array.isArray(payload) ? payload : [];
       this.updateDom();
     }
