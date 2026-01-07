@@ -41,11 +41,20 @@ Add the module to your modules array in your config.js.
   }
 },
 ```
-## Load update page for Tasklist
-Open a browser and type ```http://serverip address:8123```
-So if for example you're MagicMirror is on 192.168.0.48 then you go to ```http://192.168.0.48:8123```
-The update screen for MyTasklist will be loaded and you will be able to add, complete or delete tasks.
+## Load Webinterface for updating the Tasklist
+Open a browser and type ```http://serverip address:8123``` </br>
+So if for example you're MagicMirror is on 192.168.0.48 then you go to ```http://192.168.0.48:8123``` </br>
+The Webinterface for MyTasklist will be loaded and you will be able to:
+
+* choose language for the Webinterface
+* add tasks
+* complete tasks
+* delete tasks
+* move the order from tasks by drag-and-drop
+* filter on all, active or done tasks
+
+All the updates are instantly published on your Mirror
 
 NOTE: </br>
-with a touchscreen you're able to check the checkboxes on the mainscreen to complete the task </br>
-
+With a touchscreen you're able to check the checkboxes on the Mirror to complete the task. </br>
+All these changes are instantly published to the Webinterface
