@@ -146,16 +146,18 @@
         translations = await res.json();
       } catch (e) {
         console.error("Kon vertalingen niet laden:", e);
-        translations = {}; // fallback
+        translations = {};
       }
 
+      // Plaats fallback waarden
       titleElem.textContent = translations.TASKS_TITLE || "MyTasklist";
       taskText.placeholder = translations.PLACEHOLDER || "New task...";
       addBtn.textContent = translations.ADD_BUTTON || "Add";
 
-      // update delete buttons
+      // Delete buttons in lijst bijwerken
+      const deleteLabel = translations.DELETE_BUTTON || "Delete";
       document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.textContent = translations.DELETE_BUTTON || "Delete";
+        btn.textContent = deleteLabel;
       });
     }
 
