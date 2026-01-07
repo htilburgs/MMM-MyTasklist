@@ -50,9 +50,6 @@
                navigator.language.startsWith("fr") ? "fr" : "nl";
     langSelect.value = lang;
 
-    // =========================
-    // Vertalingen
-    // =========================
     async function loadTranslations() {
       try {
         const res = await fetch(`/api/lang?lang=${lang}`);
@@ -76,7 +73,7 @@
     });
 
     // =========================
-    // Taken
+    // Taken laden en renderen
     // =========================
     async function loadTasks() {
       try {
@@ -99,17 +96,13 @@
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = task.done;
-        checkbox.addEventListener("change", async () => {
-          await toggleTask(task.id);
-        });
+        checkbox.addEventListener("change", async () => await toggleTask(task.id));
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(task.text));
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
-        deleteBtn.addEventListener("click", async () => {
-          await deleteTask(task.id);
-        });
+        deleteBtn.addEventListener("click", async () => await deleteTask(task.id));
 
         li.appendChild(label);
         li.appendChild(deleteBtn);
@@ -185,6 +178,8 @@
     async function init() {
       await loadTranslations();
       await loadTasks();
+      // fallback: poll elke 2 seconden (optioneel)
+      setInterval(loadTasks, 2000);
     }
 
     init();
