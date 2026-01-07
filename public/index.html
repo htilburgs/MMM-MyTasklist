@@ -12,7 +12,6 @@
       padding: 0 10px;
       background: #f0f0f0;
     }
-    h1 { text-align: center; color: #333; margin-bottom: 10px; }
     #langSelect { display: block; margin: 0 auto 20px auto; font-size: 1rem; padding: 6px 12px; }
     form { display: flex; margin-bottom: 20px; }
     input[type=text] {
@@ -43,8 +42,6 @@
   </style>
 </head>
 <body>
-  <h1 id="title">MyTasklist</h1>
-
   <select id="langSelect">
     <option value="nl">Nederlands</option>
     <option value="en">English</option>
@@ -64,7 +61,6 @@
     const taskForm = document.getElementById("taskForm");
     const taskText = document.getElementById("taskText");
     const langSelect = document.getElementById("langSelect");
-    const titleElem = document.getElementById("title");
     const addBtn = document.getElementById("addBtn");
 
     let tasks = [];
@@ -88,12 +84,8 @@
     }
 
     function applyTranslations() {
-      // Titel, placeholder en add-knop
-      titleElem.textContent = translations.TASKS_TITLE || "MyTasklist";
       taskText.placeholder = translations.PLACEHOLDER || "New task...";
       addBtn.textContent = translations.ADD_BUTTON || "Add";
-
-      // Delete-knoppen
       document.querySelectorAll(".delete-btn").forEach(btn => {
         btn.textContent = translations.DELETE_BUTTON || "Delete";
       });
@@ -102,7 +94,7 @@
     langSelect.addEventListener("change", async () => {
       lang = langSelect.value;
       await loadTranslations();
-      await loadTasks(); // render opnieuw met juiste labels
+      await loadTasks(); // opnieuw renderen
     });
 
     // =========================
@@ -112,9 +104,7 @@
       try {
         const res = await fetch("/api/tasks");
         tasks = await res.json();
-      } catch {
-        tasks = [];
-      }
+      } catch { tasks = []; }
       renderTasks();
     }
 
@@ -131,13 +121,17 @@
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.checked = task.done;
-        checkbox.addEventListener("change", () => toggleTask(task.id));
+        checkbox.addEventListener("change", async () => {
+          await toggleTask(task.id); // direct her-renderen
+        });
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(task.text));
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
-        deleteBtn.addEventListener("click", () => deleteTask(task.id));
+        deleteBtn.addEventListener("click", async () => {
+          await deleteTask(task.id); // direct her-renderen
+        });
 
         li.appendChild(label);
         li.appendChild(deleteBtn);
@@ -147,7 +141,7 @@
         li.addEventListener("dragend", () => { li.classList.remove("dragging"); saveOrder(); });
       });
 
-      applyTranslations(); // pas labels nu correct toe
+      applyTranslations(); // labels up-to-date
     }
 
     // =========================
@@ -178,7 +172,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tasks })
       });
-      loadTasks();
+      await loadTasks();
     }
 
     // =========================
@@ -194,24 +188,24 @@
         body: JSON.stringify({ text }) 
       });
       taskText.value = "";
-      await loadTasks();
+      await loadTasks(); // direct updaten
     });
 
     async function toggleTask(id) {
       await fetch(`/api/toggle/${id}`, { method: "POST" });
-      await loadTasks();
+      await loadTasks(); // direct updaten
     }
 
     async function deleteTask(id) {
       await fetch(`/api/delete/${id}`, { method: "POST" });
-      await loadTasks();
+      await loadTasks(); // direct updaten
     }
 
     // =========================
     // INIT
     // =========================
     async function init() {
-      await loadTranslations(); // eerst vertalingen
+      await loadTranslations(); // eerst labels
       await loadTasks();        // daarna taken renderen
     }
 
