@@ -1,44 +1,7 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyTasklist Webinterface</title>
-<style>
-body { font-family: Arial; max-width:700px; margin:20px auto; background:#f0f0f0; padding:0 10px; }
-#tasksTitle { text-align:center; margin-bottom:10px; font-size:1.5rem; }
-#langSelect { display:block; margin:0 auto 20px; padding:6px 12px; font-size:1rem; }
-form { display:flex; margin-bottom:20px; }
-input[type=text] { flex:1; padding:10px; font-size:1rem; border:1px solid #ccc; border-radius:5px 0 0 5px; }
-button { padding:10px 20px; font-size:1rem; border:none; background:#007bff; color:white; cursor:pointer; border-radius:0 5px 5px 0; }
-button:hover { background:#0056b3; }
-ul { list-style:none; padding:0; margin:0; max-height:500px; overflow-y:auto; }
-li { display:flex; align-items:center; justify-content:space-between; padding:12px 15px; margin-bottom:10px; background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); cursor:grab; }
-li.done label { text-decoration:line-through; color:#999; }
-label { flex:1; font-size:1.1rem; cursor:pointer; }
-.delete-btn { background:#dc3545; border:none; color:white; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:0.9rem; }
-.delete-btn:hover { background:#a71d2a; }
-input[type=checkbox] { margin-right:10px; transform:scale(1.3); cursor:pointer; }
-</style>
-</head>
-<body>
-
 <h2 id="tasksTitle">Mijn Taken</h2>
-
-<select id="langSelect">
-  <option value="nl">Nederlands</option>
-  <option value="en">English</option>
-  <option value="de">Deutsch</option>
-  <option value="fr">Français</option>
-</select>
-
-<form id="taskForm">
-  <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
-  <button type="submit" id="addBtn">Toevoegen</button>
-</form>
-
+<select id="langSelect"> ... </select>
+<form id="taskForm"> ... </form>
 <ul id="taskList"></ul>
-
 <script>
 const taskList = document.getElementById("taskList");
 const taskForm = document.getElementById("taskForm");
@@ -52,21 +15,18 @@ let translations = {};
 let lang = navigator.language.startsWith("en")?"en":navigator.language.startsWith("de")?"de":navigator.language.startsWith("fr")?"fr":"nl";
 langSelect.value = lang;
 
-// WebSocket realtime
+// WebSocket
 const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){
-    // Altijd object met tasks array
     tasksData = data.tasks;
     tasksTitle.textContent = translations.TASKS_TITLE || tasksData.tasks_title || "Mijn Taken";
     renderTasks(tasksData.tasks);
   }
 };
 
-// ===================
 // Translations
-// ===================
 async function loadTranslations(){
   try{
     const res = await fetch(`/api/lang?lang=${lang}`);
@@ -76,15 +36,10 @@ async function loadTranslations(){
 }
 
 function applyTranslations(){
-  // Titel boven taalselector
   tasksTitle.textContent = translations.TASKS_TITLE || tasksData.tasks_title || "Mijn Taken";
-
-  // Placeholder & knoppen
   taskText.placeholder = translations.PLACEHOLDER || "New task...";
   addBtn.textContent = translations.ADD_BUTTON || "Add";
-  document.querySelectorAll(".delete-btn").forEach(btn=>{
-    btn.textContent = translations.DELETE_BUTTON || "Delete";
-  });
+  document.querySelectorAll(".delete-btn").forEach(btn=>btn.textContent = translations.DELETE_BUTTON || "Delete");
 }
 
 langSelect.addEventListener("change", async ()=>{
@@ -92,12 +47,10 @@ langSelect.addEventListener("change", async ()=>{
   await loadTranslations();
 });
 
-// ===================
-// Render tasks
-// ===================
+// Render
 function renderTasks(taskArray){
   taskList.innerHTML="";
-  (taskArray || []).forEach(task=>{
+  (taskArray||[]).forEach(task=>{
     const li = document.createElement("li");
     li.dataset.id = task.id;
     if(task.done) li.classList.add("done");
@@ -121,9 +74,7 @@ function renderTasks(taskArray){
   applyTranslations();
 }
 
-// ===================
 // Add / Toggle / Delete
-// ===================
 taskForm.addEventListener("submit", async e=>{
   e.preventDefault();
   const text = taskText.value.trim();
@@ -134,24 +85,10 @@ taskForm.addEventListener("submit", async e=>{
   }
 });
 
-async function toggleTask(id){
-  if(ws.readyState===WebSocket.OPEN){
-    await fetch(`/api/toggle/${id}`, {method:"POST"});
-  }
-}
-
-async function deleteTask(id){
-  if(ws.readyState===WebSocket.OPEN){
-    await fetch(`/api/delete/${id}`, {method:"POST"});
-  }
-}
+async function toggleTask(id){ if(ws.readyState===WebSocket.OPEN) await fetch(`/api/toggle/${id}`, {method:"POST"}); }
+async function deleteTask(id){ if(ws.readyState===WebSocket.OPEN) await fetch(`/api/delete/${id}`, {method:"POST"}); }
 
 // Init
-async function init(){
-  await loadTranslations();
-}
+async function init(){ await loadTranslations(); }
 init();
 </script>
-
-</body>
-</html>
