@@ -2,9 +2,10 @@ Module.register("MMM-MyTasklist", {
   defaults: {
     updateInterval: 300000, // 5 minuten
     showCompleted: true,
-    maxTasks: null
+    maxTasks: null,
+    tasksFile: "tasks.json" 
   },
-
+  
   start() {
     this.tasks = [];
     this.sendSocketNotification("GET_TASKS");
