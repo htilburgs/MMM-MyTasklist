@@ -15,77 +15,72 @@ module.exports = NodeHelper.create({
     this.app.use(express.json());
     this.app.use(express.static(path.join(__dirname, "public")));
 
-    // API: taken
-    this.app.get("/api/tasks", (req, res) => res.json(this.loadTasks()));
+    /* =========================
+       API ENDPOINTS
+    ========================= */
 
+    // Alle taken ophalen
+    this.app.get("/api/tasks", (req, res) => {
+      res.json(this.loadTasks());
+    });
+
+    // Nieuwe taak
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if (!text) return res.status(400).send("Geen tekst opgegeven");
 
       const tasks = this.loadTasks();
-      tasks.push({ id: Date.now(), text, done: false });
-      this.saveTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
+      tasks.push({
+        id: Date.now(),
+        text,
+        done: false
+      });
+
+      this.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
 
+    // Toggle taak
     this.app.post("/api/toggle/:id", (req, res) => {
-      const tasks = this.loadTasks();
-      const task = tasks.find(t => t.id == req.params.id);
-      if (task) task.done = !task.done;
-      this.saveTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
+      const tasks = this.toggleTask(req.params.id);
+      this.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
 
+    // Verwijder taak
     this.app.post("/api/delete/:id", (req, res) => {
-      let tasks = this.loadTasks();
-      tasks = tasks.filter(t => t.id != req.params.id);
-      this.saveTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
+      const id = Number(req.params.id);
+      const tasks = this.loadTasks().filter(t => t.id !== id);
+
+      this.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
 
-    // vertalingen
+    // Vertalingen
     this.app.get("/api/lang", (req, res) => {
       const lang = req.query.lang || "nl";
-      const translations = require(path.join(__dirname, "translations", `${lang}.json`));
-      res.json(translations);
+      const file = path.join(__dirname, "translations", `${lang}.json`);
+
+      if (!fs.existsSync(file)) {
+        return res.json({});
+      }
+
+      res.json(JSON.parse(fs.readFileSync(file, "utf8")));
     });
 
-    this.app.listen(8123, () => console.log("Webinterface draait op poort 8123"));
+    this.app.listen(8123, () =>
+      console.log("MMM-MyTasklist webinterface draait op poort 8123")
+    );
   },
+
+  /* =========================
+     SOCKET COMMUNICATIE
+  ========================= */
 
   socketNotificationReceived(notification, payload) {
     if (notification === "GET_TASKS") {
       this.sendSocketNotification("TASKS", this.loadTasks());
     }
+
     if (notification === "TOGGLE_TASK") {
-      const tasks = this.loadTasks();
-      const task = tasks.find(t => t.id === payload);
-      if (task) {
-        task.done = !task.done;
-        this.saveTasks(tasks);
-        this.sendSocketNotification("TASKS", tasks);
-      }
-    }
-  },
-
-  loadTasks() {
-    try {
-      if (!fs.existsSync(this.tasksFile)) fs.writeFileSync(this.tasksFile, "[]", "utf8");
-      return JSON.parse(fs.readFileSync(this.tasksFile, "utf8"));
-    } catch (e) {
-      console.error("Fout bij laden tasks.json:", e);
-      return [];
-    }
-  },
-
-  saveTasks(tasks) {
-    try {
-      fs.writeFileSync(this.tasksFile, JSON.stringify(tasks, null, 2), "utf8");
-    } catch (e) {
-      console.error("Fout bij opslaan tasks.json:", e);
-    }
-  }
-});
+      co
