@@ -15,9 +15,12 @@ module.exports = NodeHelper.create({
     this.app.use(express.json());
     this.app.use(express.static(path.join(__dirname, "public")));
 
-    // API: taken
-    this.app.get("/api/tasks", (req, res) => res.json(this.loadTasks()));
+    // GET all tasks
+    this.app.get("/api/tasks", (req, res) => {
+      res.json(this.loadTasks());
+    });
 
+    // ADD new task
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if (!text) return res.status(400).send("Geen tekst opgegeven");
@@ -26,38 +29,38 @@ module.exports = NodeHelper.create({
       tasks.push({ id: Date.now(), text, done: false });
       this.saveTasks(tasks);
       this.sendSocketNotification("TASKS", tasks);
-      res.sendStatus(200);
+      res.json(tasks); // stuur direct terug
     });
 
+    // TOGGLE task
     this.app.post("/api/toggle/:id", (req, res) => {
       const tasks = this.loadTasks();
       const task = tasks.find(t => t.id == req.params.id);
       if (task) task.done = !task.done;
       this.saveTasks(tasks);
       this.sendSocketNotification("TASKS", tasks);
-      res.sendStatus(200);
+      res.json(tasks); // stuur de nieuwe lijst terug
     });
 
+    // DELETE task
     this.app.post("/api/delete/:id", (req, res) => {
       let tasks = this.loadTasks();
       tasks = tasks.filter(t => t.id != req.params.id);
       this.saveTasks(tasks);
       this.sendSocketNotification("TASKS", tasks);
-      res.sendStatus(200);
+      res.json(tasks); // stuur de nieuwe lijst terug
     });
 
-    // ========================
-    // Nieuwe endpoint: reorder
-    // ========================
+    // REORDER tasks
     this.app.post("/api/tasks/reorder", (req, res) => {
       const newTasks = req.body.tasks;
       if (!Array.isArray(newTasks)) return res.status(400).send("Invalid tasks array");
       this.saveTasks(newTasks);
       this.sendSocketNotification("TASKS", newTasks);
-      res.sendStatus(200);
+      res.json(newTasks); // stuur de nieuwe lijst terug
     });
 
-    // vertalingen
+    // Load translations
     this.app.get("/api/lang", (req, res) => {
       const lang = req.query.lang || "nl";
       const translationsFile = path.join(__dirname, "translations", `${lang}.json`);
