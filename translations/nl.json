@@ -1,5 +1,8 @@
 {
   "NO_TASKS": "Geen taken",
   "ADD_TASK": "Toevoegen",
-  "PLACEHOLDER": "Nieuwe taak..."
+  "PLACEHOLDER": "Nieuwe taak...",
+  "TITLE": "Mijn Takenlijst",
+  "addButton": "Toevoegen",
+  "deleteButton": "Verwijderen"
 }
