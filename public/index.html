@@ -2,95 +2,168 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>My Tasklist</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <title>MyTasklist Webinterface</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 0 10px;
+    }
+    h1 { text-align: center; }
+    ul { list-style: none; padding: 0; }
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 10px;
+      border-bottom: 1px solid #ccc;
+      cursor: grab;
+      background: #f9f9f9;
+    }
+    li.dragging {
+      opacity: 0.5;
+      background: #e0e0e0;
+    }
+    .done { text-decoration: line-through; opacity: 0.6; }
+    button { margin-left: 5px; }
+    input[type=text] { width: 70%; padding: 5px; }
+    form { display: flex; margin-bottom: 10px; }
+  </style>
 </head>
 <body>
+  <h1>MyTasklist</h1>
 
-  <!-- Taalkeuze -->
-  <div class="input-row">
-    <select id="langSelect">
-      <option value="nl">Nederlands</option>
-      <option value="en">English</option>
-      <option value="de">Deutsch</option>
-      <option value="fr">Français</option>
-    </select>
-  </div>
+  <form id="taskForm">
+    <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
+    <button type="submit">Toevoegen</button>
+  </form>
 
-  <!-- Taak invoer -->
-  <div class="input-row">
-    <input id="taskInput" placeholder="">
-    <button id="addBtn"></button>
-  </div>
-
-  <ul id="tasks"></ul>
+  <ul id="taskList"></ul>
 
   <script>
-    const taskInput = document.getElementById("taskInput");
-    const addBtn = document.getElementById("addBtn");
-    const tasksUl = document.getElementById("tasks");
-    const langSelect = document.getElementById("langSelect");
+    const taskList = document.getElementById("taskList");
+    const taskForm = document.getElementById("taskForm");
+    const taskText = document.getElementById("taskText");
 
-    async function loadLang(lang) {
-      const selectedLang = lang || langSelect.value || "nl";
-      const res = await fetch(`/api/lang?lang=${selectedLang}`);
-      const t = await res.json();
+    let tasks = [];
 
-      window.MM_TASKS_PLACEHOLDER = t.PLACEHOLDER;
-      window.MM_TASKS_ADD = t.ADD_TASK;
-
-      taskInput.placeholder = t.PLACEHOLDER;
-      addBtn.textContent = t.ADD_TASK;
-
-      localStorage.setItem("myTasklistLang", selectedLang);
-    }
-
-    langSelect.addEventListener("change", () => loadLang(langSelect.value).then(loadTasks));
-
+    /* =========================
+       Fetch en render
+    ========================= */
     async function loadTasks() {
       const res = await fetch("/api/tasks");
-      const tasks = await res.json();
-      tasksUl.innerHTML = "";
+      tasks = await res.json();
+      renderTasks();
+    }
 
+    function renderTasks() {
+      taskList.innerHTML = "";
       tasks.forEach(task => {
         const li = document.createElement("li");
-        li.innerHTML = `
-          <input type="checkbox" ${task.done ? "checked" : ""} onchange="toggleTask(${task.id})">
-          <span class="task-text ${task.done ? "done" : ""}">${task.text}</span>
-          <button class="delete-btn" onclick="deleteTask(${task.id})">✕</button>
-        `;
-        tasksUl.appendChild(li);
+        li.setAttribute("draggable", true);
+        li.dataset.id = task.id;
+
+        const label = document.createElement("label");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.done;
+        checkbox.addEventListener("change", () => toggleTask(task.id));
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(" " + task.text));
+        if (task.done) label.classList.add("done");
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "Verwijderen";
+        deleteBtn.addEventListener("click", () => deleteTask(task.id));
+
+        li.appendChild(label);
+        li.appendChild(deleteBtn);
+        taskList.appendChild(li);
+
+        /* =========================
+           Drag & Drop events
+        ========================= */
+        li.addEventListener("dragstart", e => li.classList.add("dragging"));
+        li.addEventListener("dragend", e => {
+          li.classList.remove("dragging");
+          saveOrder();
+        });
       });
     }
 
-    async function addTask() {
-      const text = taskInput.value.trim();
-      if (!text) return;
-      await fetch("/api/tasks", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({text}) });
-      taskInput.value = "";
+    /* =========================
+       Drag & Drop logica
+    ========================= */
+    taskList.addEventListener("dragover", e => {
+      e.preventDefault();
+      const dragging = document.querySelector(".dragging");
+      const afterElement = getDragAfterElement(taskList, e.clientY);
+      if (!afterElement) {
+        taskList.appendChild(dragging);
+      } else {
+        taskList.insertBefore(dragging, afterElement);
+      }
+    });
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll("li:not(.dragging)")];
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    async function saveOrder() {
+      // Update tasks array volgens DOM volgorde
+      const newOrder = [...taskList.children].map(li => tasks.find(t => t.id == li.dataset.id));
+      tasks = newOrder;
+
+      // POST naar backend om nieuwe volgorde op te slaan
+      await fetch("/api/tasks/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tasks })
+      });
+
       loadTasks();
     }
 
+    /* =========================
+       API functies
+    ========================= */
+    taskForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const text = taskText.value.trim();
+      if (!text) return;
+
+      await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      taskText.value = "";
+      loadTasks();
+    });
+
     async function toggleTask(id) {
-      await fetch(`/api/toggle/${id}`, { method:"POST" });
+      await fetch(`/api/toggle/${id}`, { method: "POST" });
       loadTasks();
     }
 
     async function deleteTask(id) {
-      await fetch(`/api/delete/${id}`, { method:"POST" });
+      await fetch(`/api/delete/${id}`, { method: "POST" });
       loadTasks();
     }
 
-    addBtn.addEventListener("click", addTask);
-    taskInput.addEventListener("keypress", e => { if(e.key==="Enter") addTask(); });
-
-    const savedLang = localStorage.getItem("myTasklistLang");
-    const browserLang = window.navigator.language.slice(0,2);
-    loadLang(savedLang || browserLang || "nl").then(() => {
-      langSelect.value = savedLang || browserLang || "nl";
-      loadTasks();
-    });
+    loadTasks();
   </script>
 </body>
 </html>
