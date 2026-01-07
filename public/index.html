@@ -2,6 +2,7 @@
 <select id="langSelect"> ... </select>
 <form id="taskForm"> ... </form>
 <ul id="taskList"></ul>
+
 <script>
 const taskList = document.getElementById("taskList");
 const taskForm = document.getElementById("taskForm");
@@ -20,8 +21,8 @@ const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){
-    tasksData = data.tasks;
-    tasksTitle.textContent = translations.TASKS_TITLE || tasksData.tasks_title || "Mijn Taken";
+    tasksData = data.tasks; // array in tasksData.tasks
+    tasksTitle.textContent = translations.TASKS_TITLE || data.tasks_title || "Mijn Taken";
     renderTasks(tasksData.tasks);
   }
 };
