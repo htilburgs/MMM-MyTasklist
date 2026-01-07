@@ -16,7 +16,14 @@
     h1 {
       text-align: center;
       color: #333;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
+    }
+
+    #langSelect {
+      display: block;
+      margin: 0 auto 20px auto;
+      font-size: 1rem;
+      padding: 6px 12px;
     }
 
     form {
@@ -97,11 +104,17 @@
   </style>
 </head>
 <body>
-  <h1>MyTasklist</h1>
+  <h1 id="title">MyTasklist</h1>
+
+  <!-- Taalselector -->
+  <select id="langSelect">
+    <option value="nl">Nederlands</option>
+    <option value="en">English</option>
+  </select>
 
   <form id="taskForm">
     <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
-    <button type="submit">Toevoegen</button>
+    <button type="submit" id="addBtn">Toevoegen</button>
   </form>
 
   <ul id="taskList"></ul>
@@ -110,7 +123,38 @@
     const taskList = document.getElementById("taskList");
     const taskForm = document.getElementById("taskForm");
     const taskText = document.getElementById("taskText");
+    const langSelect = document.getElementById("langSelect");
+    const titleElem = document.getElementById("title");
+    const addBtn = document.getElementById("addBtn");
+
     let tasks = [];
+    let translations = {};
+    let lang = navigator.language.startsWith("en") ? "en" : "nl";
+
+    langSelect.value = lang;
+
+    /* =========================
+       Load vertalingen
+    ========================= */
+    async function loadTranslations() {
+      const res = await fetch(`/api/lang?lang=${lang}`);
+      translations = await res.json();
+
+      // Pas teksten aan
+      titleElem.textContent = translations.title;
+      taskText.placeholder = translations.placeholder;
+      addBtn.textContent = translations.addButton;
+
+      // Pas delete buttons in lijst aan
+      document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.textContent = translations.deleteButton;
+      });
+    }
+
+    langSelect.addEventListener("change", async () => {
+      lang = langSelect.value;
+      await loadTranslations();
+    });
 
     /* =========================
        Load en render taken
@@ -123,6 +167,7 @@
 
     function renderTasks() {
       taskList.innerHTML = "";
+
       tasks.forEach(task => {
         const li = document.createElement("li");
         li.dataset.id = task.id;
@@ -138,15 +183,14 @@
         label.appendChild(document.createTextNode(task.text));
 
         const deleteBtn = document.createElement("button");
-        deleteBtn.textContent = "Verwijderen";
         deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = translations.deleteButton; // vertaling gebruiken
         deleteBtn.addEventListener("click", () => deleteTask(task.id));
 
         li.appendChild(label);
         li.appendChild(deleteBtn);
         taskList.appendChild(li);
 
-        // drag events
         li.addEventListener("dragstart", () => li.classList.add("dragging"));
         li.addEventListener("dragend", () => { li.classList.remove("dragging"); saveOrder(); });
       });
@@ -211,7 +255,15 @@
       loadTasks();
     }
 
-    loadTasks();
+    /* =========================
+       INIT
+    ========================= */
+    async function init() {
+      await loadTranslations();
+      await loadTasks();
+    }
+
+    init();
   </script>
 </body>
 </html>
