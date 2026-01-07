@@ -6,39 +6,29 @@ const path = require("path");
 module.exports = NodeHelper.create({
 
   start() {
-    this.tasksFile = null;
+    this.tasksFile = path.join(__dirname, "tasks.json"); // standaard pad
     this.fileWatcher = null;
 
     console.log("MMM-MyTasklist helper gestart");
 
+    this.ensureTasksFile();
+
     // Express server
     this.app = express();
     this.app.use(express.json());
-    this.app.use(express.static(path.join(__dirname, "public"))); // serve index.html automatisch
+    this.app.use(express.static(path.join(__dirname, "public"))); // serve index.html
     this.app.listen(8123, () => {
       console.log("MMM-MyTasklist webinterface draait op poort 8123");
     });
 
-    // API endpoints
+    // API routes
     this.setupAPI();
+
+    // Live reload
+    this.startFileWatcher();
   },
 
   socketNotificationReceived(notification, payload) {
-    if (notification === "INIT") {
-      this.tasksFile = path.isAbsolute(payload)
-        ? payload
-        : path.join(__dirname, payload);
-
-      this.ensureTasksFile();
-      this.startFileWatcher();
-
-      // stuur meteen tasks naar MagicMirror
-      this.sendSocketNotification("TASKS", this.loadTasks());
-      return;
-    }
-
-    if (!this.tasksFile) return;
-
     if (notification === "GET_TASKS") {
       this.sendSocketNotification("TASKS", this.loadTasks());
     }
@@ -57,12 +47,12 @@ module.exports = NodeHelper.create({
     const self = this;
 
     // GET alle taken
-    this.app.get("/api/tasks", (req, res) => {
+    self.app.get("/api/tasks", (req, res) => {
       res.json(self.loadTasks());
     });
 
-    // POST: nieuwe taak
-    this.app.post("/api/tasks", (req, res) => {
+    // POST nieuwe taak
+    self.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if (!text) return res.status(400).send("Geen tekst opgegeven");
 
@@ -73,22 +63,22 @@ module.exports = NodeHelper.create({
       res.sendStatus(200);
     });
 
-    // POST: toggle done/undone
-    this.app.post("/api/toggle/:id", (req, res) => {
+    // POST toggle done/undone
+    self.app.post("/api/toggle/:id", (req, res) => {
       const tasks = self.toggleTask(req.params.id);
       self.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
 
-    // POST: verwijder taak
-    this.app.post("/api/delete/:id", (req, res) => {
+    // POST delete taak
+    self.app.post("/api/delete/:id", (req, res) => {
       const tasks = self.loadTasks().filter(t => t.id != req.params.id);
       self.saveAndBroadcast(tasks);
       res.sendStatus(200);
     });
 
-    // POST: reorder taken (drag-and-drop)
-    this.app.post("/api/tasks/reorder", (req, res) => {
+    // POST reorder taken
+    self.app.post("/api/tasks/reorder", (req, res) => {
       const tasks = req.body.tasks;
       if (!Array.isArray(tasks)) return res.status(400).send("Invalid data");
 
@@ -104,17 +94,19 @@ module.exports = NodeHelper.create({
     try {
       if (!fs.existsSync(this.tasksFile)) {
         fs.writeFileSync(this.tasksFile, "[]", "utf8");
+        console.log("tasks.json aangemaakt");
       }
     } catch (e) {
-      console.error("MMM-MyTasklist: kan tasks.json niet aanmaken", e);
+      console.error("Kan tasks.json niet aanmaken:", e);
     }
   },
 
   loadTasks() {
     try {
-      return JSON.parse(fs.readFileSync(this.tasksFile, "utf8"));
+      const data = fs.readFileSync(this.tasksFile, "utf8");
+      return JSON.parse(data);
     } catch (e) {
-      console.error("MMM-MyTasklist: fout bij laden tasks.json", e);
+      console.error("Fout bij laden tasks.json:", e);
       return [];
     }
   },
@@ -123,7 +115,7 @@ module.exports = NodeHelper.create({
     try {
       fs.writeFileSync(this.tasksFile, JSON.stringify(tasks, null, 2), "utf8");
     } catch (e) {
-      console.error("MMM-MyTasklist: fout bij opslaan tasks.json", e);
+      console.error("Fout bij opslaan tasks.json:", e);
     }
   },
 
@@ -155,7 +147,7 @@ module.exports = NodeHelper.create({
       });
       console.log("MMM-MyTasklist: live reload watcher gestart");
     } catch (e) {
-      console.error("MMM-MyTasklist: fout bij starten file watcher", e);
+      console.error("Fout bij starten file watcher:", e);
     }
   }
 
