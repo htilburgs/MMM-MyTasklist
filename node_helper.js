@@ -24,14 +24,20 @@ module.exports = NodeHelper.create({
 
     const updateTasks = (tasksData, res) => {
       this.saveTasks(tasksData);
-      this.sendSocketNotification("TASKS", tasksData.tasks); // array voor Mirror
-      broadcastTasks(tasksData); // object voor index.html
+
+      // Mirror krijgt array
+      this.sendSocketNotification("TASKS", tasksData.tasks);
+
+      // index.html krijgt object
+      broadcastTasks(tasksData);
+
       if(res) res.json(tasksData);
     };
 
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if(!text) return res.status(400).send("Geen tekst opgegeven");
+
       const tasksData = this.loadTasks();
       tasksData.tasks.push({ id: Date.now(), text, done: false });
       updateTasks(tasksData, res);
@@ -70,7 +76,7 @@ module.exports = NodeHelper.create({
 
   loadTasks() {
     if(!fs.existsSync(this.tasksFile)) {
-      const defaultData = { tasks_title: "Mijn Taken", tasks: [] };
+      const defaultData = { tasks: [] };
       fs.writeFileSync(this.tasksFile, JSON.stringify(defaultData, null, 2));
     }
     return JSON.parse(fs.readFileSync(this.tasksFile, "utf8"));
