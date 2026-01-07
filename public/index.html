@@ -5,40 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyTasklist Webinterface</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 700px;
-      margin: 20px auto;
-      padding: 0 10px;
-      background: #f0f0f0;
-    }
-    #langSelect { display: block; margin: 0 auto 20px auto; font-size: 1rem; padding: 6px 12px; }
+    body { font-family: Arial; max-width: 700px; margin: 20px auto; padding: 0 10px; background: #f0f0f0; }
+    #langSelect { display: block; margin: 0 auto 20px; padding: 6px 12px; font-size: 1rem; }
     form { display: flex; margin-bottom: 20px; }
-    input[type=text] {
-      flex: 1; padding: 10px; font-size: 1rem;
-      border: 1px solid #ccc; border-radius: 5px 0 0 5px; outline: none;
-    }
-    button {
-      padding: 10px 20px; font-size: 1rem; border: none; background: #007bff;
-      color: white; cursor: pointer; border-radius: 0 5px 5px 0; transition: background 0.2s;
-    }
-    button:hover { background: #0056b3; }
-    ul { list-style: none; padding: 0; margin: 0; max-height: 500px; overflow-y: auto; }
-    li {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 15px; margin-bottom: 10px; background: #fff;
-      border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      cursor: grab; transition: background 0.2s, transform 0.1s;
-    }
-    li.dragging { opacity: 0.5; background: #e0e0e0; }
-    li.done label { text-decoration: line-through; color: #999; }
-    label { flex: 1; font-size: 1.1rem; cursor: pointer; }
-    .delete-btn {
-      background: #dc3545; border: none; color: white; padding: 6px 12px;
-      border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s;
-    }
-    .delete-btn:hover { background: #a71d2a; }
-    input[type=checkbox] { margin-right: 10px; transform: scale(1.3); cursor: pointer; }
+    input[type=text] { flex:1; padding:10px; font-size:1rem; border:1px solid #ccc; border-radius:5px 0 0 5px; outline:none; }
+    button { padding:10px 20px; font-size:1rem; border:none; background:#007bff; color:white; cursor:pointer; border-radius:0 5px 5px 0; transition:0.2s; }
+    button:hover { background:#0056b3; }
+    ul { list-style:none; padding:0; margin:0; max-height:500px; overflow-y:auto; }
+    li { display:flex; align-items:center; justify-content:space-between; padding:12px 15px; margin-bottom:10px; background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); cursor:grab; transition:0.2s; }
+    li.dragging { opacity:0.5; background:#e0e0e0; }
+    li.done label { text-decoration:line-through; color:#999; }
+    label { flex:1; font-size:1.1rem; cursor:pointer; }
+    .delete-btn { background:#dc3545; border:none; color:white; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:0.9rem; transition:0.2s; }
+    .delete-btn:hover { background:#a71d2a; }
+    input[type=checkbox] { margin-right:10px; transform:scale(1.3); cursor:pointer; }
   </style>
 </head>
 <body>
@@ -71,15 +51,13 @@
     langSelect.value = lang;
 
     // =========================
-    // Vertalingen ophalen
+    // Vertalingen
     // =========================
     async function loadTranslations() {
       try {
         const res = await fetch(`/api/lang?lang=${lang}`);
         translations = await res.json();
-      } catch {
-        translations = {};
-      }
+      } catch { translations = {}; }
       applyTranslations();
     }
 
@@ -94,11 +72,11 @@
     langSelect.addEventListener("change", async () => {
       lang = langSelect.value;
       await loadTranslations();
-      await loadTasks(); // opnieuw renderen
+      await loadTasks();
     });
 
     // =========================
-    // Taken laden en renderen
+    // Taken
     // =========================
     async function loadTasks() {
       try {
@@ -122,7 +100,7 @@
         checkbox.type = "checkbox";
         checkbox.checked = task.done;
         checkbox.addEventListener("change", async () => {
-          await toggleTask(task.id); // direct her-renderen
+          await toggleTask(task.id);
         });
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(task.text));
@@ -130,7 +108,7 @@
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
         deleteBtn.addEventListener("click", async () => {
-          await deleteTask(task.id); // direct her-renderen
+          await deleteTask(task.id);
         });
 
         li.appendChild(label);
@@ -141,11 +119,11 @@
         li.addEventListener("dragend", () => { li.classList.remove("dragging"); saveOrder(); });
       });
 
-      applyTranslations(); // labels up-to-date
+      applyTranslations();
     }
 
     // =========================
-    // Drag & drop
+    // Drag & Drop
     // =========================
     taskList.addEventListener("dragover", e => {
       e.preventDefault();
@@ -167,46 +145,46 @@
 
     async function saveOrder() {
       tasks = [...taskList.children].map(li => tasks.find(t => t.id == li.dataset.id));
-      await fetch("/api/tasks/reorder", {
+      const res = await fetch("/api/tasks/reorder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tasks })
       });
-      await loadTasks();
+      tasks = await res.json();
+      renderTasks();
     }
 
     // =========================
-    // Add / toggle / delete
+    // Add / Toggle / Delete
     // =========================
     taskForm.addEventListener("submit", async e => {
       e.preventDefault();
       const text = taskText.value.trim();
       if (!text) return;
-      await fetch("/api/tasks", { 
-        method: "POST", 
-        headers: {"Content-Type":"application/json"}, 
-        body: JSON.stringify({ text }) 
-      });
+      const res = await fetch("/api/tasks", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ text }) });
+      tasks = await res.json();
       taskText.value = "";
-      await loadTasks(); // direct updaten
+      renderTasks();
     });
 
     async function toggleTask(id) {
-      await fetch(`/api/toggle/${id}`, { method: "POST" });
-      await loadTasks(); // direct updaten
+      const res = await fetch(`/api/toggle/${id}`, { method: "POST" });
+      tasks = await res.json();
+      renderTasks();
     }
 
     async function deleteTask(id) {
-      await fetch(`/api/delete/${id}`, { method: "POST" });
-      await loadTasks(); // direct updaten
+      const res = await fetch(`/api/delete/${id}`, { method: "POST" });
+      tasks = await res.json();
+      renderTasks();
     }
 
     // =========================
     // INIT
     // =========================
     async function init() {
-      await loadTranslations(); // eerst labels
-      await loadTasks();        // daarna taken renderen
+      await loadTranslations();
+      await loadTasks();
     }
 
     init();
