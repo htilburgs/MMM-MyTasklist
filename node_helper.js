@@ -1,76 +1,12 @@
 const NodeHelper = require("node_helper");
-const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
 module.exports = NodeHelper.create({
+
   start() {
-    this.tasksFile = path.join(__dirname, "tasks.json");
-    this.setupServer();
-    console.log("MMM-MyTasklist helper gestart");
-  },
-
-  setupServer() {
-    this.app = express();
-    this.app.use(express.json());
-    this.app.use(express.static(path.join(__dirname, "public")));
-
-    /* =========================
-       API ENDPOINTS
-    ========================= */
-
-    // Alle taken ophalen
-    this.app.get("/api/tasks", (req, res) => {
-      res.json(this.loadTasks());
-    });
-
-    // Nieuwe taak
-    this.app.post("/api/tasks", (req, res) => {
-      const { text } = req.body;
-      if (!text) return res.status(400).send("Geen tekst opgegeven");
-
-      const tasks = this.loadTasks();
-      tasks.push({
-        id: Date.now(),
-        text,
-        done: false
-      });
-
-      this.saveAndBroadcast(tasks);
-      res.sendStatus(200);
-    });
-
-    // Toggle taak
-    this.app.post("/api/toggle/:id", (req, res) => {
-      const tasks = this.toggleTask(req.params.id);
-      this.saveAndBroadcast(tasks);
-      res.sendStatus(200);
-    });
-
-    // Verwijder taak
-    this.app.post("/api/delete/:id", (req, res) => {
-      const id = Number(req.params.id);
-      const tasks = this.loadTasks().filter(t => t.id !== id);
-
-      this.saveAndBroadcast(tasks);
-      res.sendStatus(200);
-    });
-
-    // Vertalingen
-    this.app.get("/api/lang", (req, res) => {
-      const lang = req.query.lang || "nl";
-      const file = path.join(__dirname, "translations", `${lang}.json`);
-
-      if (!fs.existsSync(file)) {
-        return res.json({});
-      }
-
-      res.json(JSON.parse(fs.readFileSync(file, "utf8")));
-    });
-
-    this.app.listen(8123, () =>
-      console.log("MMM-MyTasklist webinterface draait op poort 8123")
-    );
+    this.tasksFile = null;
+    console.log("MMM-MyTasklist node_helper gestart");
   },
 
   /* =========================
@@ -78,9 +14,75 @@ module.exports = NodeHelper.create({
   ========================= */
 
   socketNotificationReceived(notification, payload) {
+
+    // Initialisatie: ontvang pad naar JSON-bestand
+    if (notification === "INIT") {
+      this.tasksFile = path.isAbsolute(payload)
+        ? payload
+        : path.join(__dirname, payload);
+
+      this.ensureTasksFile();
+      return;
+    }
+
+    if (!this.tasksFile) return;
+
     if (notification === "GET_TASKS") {
       this.sendSocketNotification("TASKS", this.loadTasks());
     }
 
     if (notification === "TOGGLE_TASK") {
-      co
+      const tasks = this.toggleTask(payload);
+      this.saveTasks(tasks);
+      this.sendSocketNotification("TASKS", tasks);
+    }
+  },
+
+  /* =========================
+     TASK LOGICA
+  ========================= */
+
+  ensureTasksFile() {
+    try {
+      if (!fs.existsSync(this.tasksFile)) {
+        fs.writeFileSync(this.tasksFile, "[]", "utf8");
+      }
+    } catch (e) {
+      console.error("MMM-MyTasklist: kan tasks.json niet aanmaken", e);
+    }
+  },
+
+  loadTasks() {
+    try {
+      return JSON.parse(fs.readFileSync(this.tasksFile, "utf8"));
+    } catch (e) {
+      console.error("MMM-MyTasklist: fout bij laden tasks.json", e);
+      return [];
+    }
+  },
+
+  saveTasks(tasks) {
+    try {
+      fs.writeFileSync(
+        this.tasksFile,
+        JSON.stringify(tasks, null, 2),
+        "utf8"
+      );
+    } catch (e) {
+      console.error("MMM-MyTasklist: fout bij opslaan tasks.json", e);
+    }
+  },
+
+  toggleTask(id) {
+    id = Number(id);
+    const tasks = this.loadTasks();
+    const task = tasks.find(t => t.id === id);
+
+    if (task) {
+      task.done = !task.done;
+    }
+
+    return tasks;
+  }
+
+});
