@@ -30,8 +30,8 @@ const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){
-    tasksData = data.tasks; // array
-    tasksTitle.textContent = translations.TASKS_TITLE || data.tasks_title || "Mijn Taken";
+    tasksData = data.tasks;
+    tasksTitle.textContent = translations.TASKS_TITLE || tasksData.tasks_title || "Mijn Taken";
     renderTasks(tasksData.tasks);
   }
 };
