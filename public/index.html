@@ -52,7 +52,6 @@ langSelect.value = lang;
 // WebSocket realtime
 // ===================
 const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
-
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){
@@ -124,21 +123,21 @@ taskForm.addEventListener("submit", async e=>{
   if(ws.readyState === WebSocket.OPEN){
     await fetch("/api/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text})});
     taskText.value="";
-    // UI update via WebSocket broadcast
+    // UI update via WebSocket
   }
 });
 
 async function toggleTask(id){
   if(ws.readyState === WebSocket.OPEN){
     await fetch(`/api/toggle/${id}`, {method:"POST"});
-    // UI update via WebSocket broadcast
+    // UI update via WebSocket
   }
 }
 
 async function deleteTask(id){
   if(ws.readyState === WebSocket.OPEN){
     await fetch(`/api/delete/${id}`, {method:"POST"});
-    // UI update via WebSocket broadcast
+    // UI update via WebSocket
   }
 }
 
