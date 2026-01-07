@@ -20,8 +20,8 @@ Module.register("MMM-MyTasklist", {
 
   socketNotificationReceived(notification, payload) {
     if (notification === "TASKS") {
-      // payload is object: { tasks_title, tasks }
-      this.tasks = Array.isArray(payload.tasks) ? payload.tasks : [];
+      // Mirror-module verwacht alleen array
+      this.tasks = Array.isArray(payload) ? payload : [];
       this.updateDom();
     }
   },
