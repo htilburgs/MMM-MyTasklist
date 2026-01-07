@@ -79,6 +79,7 @@ function renderTasks() {
     li.addEventListener("drop", dragDrop);
     li.addEventListener("dragend", dragEnd);
 
+    // Checkbox + label
     const label = document.createElement("label");
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -87,6 +88,7 @@ function renderTasks() {
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode(task.text));
 
+    // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-btn";
     deleteBtn.addEventListener("click", () => deleteTask(task.id));
@@ -112,7 +114,7 @@ taskForm.addEventListener("submit", async e => {
     body: JSON.stringify({ text })
   });
   taskText.value = "";
-  // UI update via WebSocket
+  // UI update gebeurt via WebSocket
 });
 
 async function toggleTask(id) {
@@ -126,25 +128,48 @@ async function deleteTask(id) {
 }
 
 // ===================
-// Drag & Drop (client-side only)
+// Drag & Drop (server-synced)
 // ===================
 let dragSrcEl = null;
 
-function dragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = "move"; }
-function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }
-function dragDrop(e) {
+function dragStart(e) {
+  dragSrcEl = this;
+  e.dataTransfer.effectAllowed = "move";
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+}
+
+async function dragDrop(e) {
   e.stopPropagation();
   if (dragSrcEl !== this) {
     const srcId = dragSrcEl.dataset.id;
     const tgtId = this.dataset.id;
     const srcIndex = tasks.findIndex(t => t.id == srcId);
     const tgtIndex = tasks.findIndex(t => t.id == tgtId);
+
+    // Pas volgorde client-side aan
     tasks.splice(tgtIndex, 0, tasks.splice(srcIndex, 1)[0]);
     renderTasks();
-    // Optioneel: POST naar server om volgorde op te slaan
+
+    // Stuur nieuwe volgorde naar server
+    try {
+      await fetch("/api/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds: tasks.map(t => t.id) })
+      });
+    } catch (err) {
+      console.error("Kon volgorde niet opslaan:", err);
+    }
   }
 }
-function dragEnd() { dragSrcEl = null; }
+
+function dragEnd() {
+  dragSrcEl = null;
+}
 
 // ===================
 // Filters
@@ -163,7 +188,6 @@ filterBtns.forEach(btn => {
 // ===================
 async function init() {
   await loadTranslations();
-  // Haal taken op van server
   try {
     const res = await fetch("/api/tasks");
     tasks = await res.json();
