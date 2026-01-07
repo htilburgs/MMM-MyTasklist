@@ -76,10 +76,9 @@ function renderTasks() {
     // Drag events
     li.addEventListener("dragstart", dragStart);
     li.addEventListener("dragover", dragOver);
-    li.addEventListener("drop", dragDrop);
     li.addEventListener("dragend", dragEnd);
 
-    // Checkbox + label
+    // Label + checkbox
     const label = document.createElement("label");
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -114,7 +113,7 @@ taskForm.addEventListener("submit", async e => {
     body: JSON.stringify({ text })
   });
   taskText.value = "";
-  // UI update gebeurt via WebSocket
+  // UI update via WebSocket
 });
 
 async function toggleTask(id) {
@@ -130,45 +129,48 @@ async function deleteTask(id) {
 // ===================
 // Drag & Drop (server-synced)
 // ===================
-let dragSrcEl = null;
+let dragSrcIndex = null;
 
 function dragStart(e) {
-  dragSrcEl = this;
-  e.dataTransfer.effectAllowed = "move";
+  dragSrcIndex = [...taskList.children].indexOf(this);
+  this.classList.add("dragging");
 }
 
 function dragOver(e) {
   e.preventDefault();
-  e.dataTransfer.dropEffect = "move";
-}
-
-async function dragDrop(e) {
-  e.stopPropagation();
-  if (dragSrcEl !== this) {
-    const srcId = dragSrcEl.dataset.id;
-    const tgtId = this.dataset.id;
-    const srcIndex = tasks.findIndex(t => t.id == srcId);
-    const tgtIndex = tasks.findIndex(t => t.id == tgtId);
-
-    // Pas volgorde client-side aan
-    tasks.splice(tgtIndex, 0, tasks.splice(srcIndex, 1)[0]);
-    renderTasks();
-
-    // Stuur nieuwe volgorde naar server
-    try {
-      await fetch("/api/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds: tasks.map(t => t.id) })
-      });
-    } catch (err) {
-      console.error("Kon volgorde niet opslaan:", err);
-    }
+  const dragging = document.querySelector(".dragging");
+  const afterElement = getDragAfterElement(taskList, e.clientY);
+  if (afterElement == null) {
+    taskList.appendChild(dragging);
+  } else {
+    taskList.insertBefore(dragging, afterElement);
   }
 }
 
-function dragEnd() {
-  dragSrcEl = null;
+async function dragEnd() {
+  this.classList.remove("dragging");
+
+  const orderedIds = [...taskList.children].map(li => Number(li.dataset.id));
+
+  await fetch("/api/reorder", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderedIds })
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll("li:not(.dragging)")];
+
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset, element: child };
+    } else {
+      return closest;
+    }
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 // ===================
