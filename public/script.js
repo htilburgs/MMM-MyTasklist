@@ -25,9 +25,14 @@ async function loadTranslations(){
 }
 
 function applyTranslations(){
-  taskText.placeholder = translations.PLACEHOLDER||"New task...";
-  addBtn.textContent = translations.ADD_BUTTON||"Add";
-  document.querySelectorAll(".delete-btn").forEach(btn=>btn.textContent=translations.DELETE_BUTTON||"Delete");
+  taskText.placeholder = translations.PLACEHOLDER || "New task...";
+  addBtn.textContent = translations.ADD_BUTTON || "Add";
+  document.querySelectorAll(".delete-btn").forEach(btn=>btn.textContent=translations.DELETE_BUTTON || "Delete");
+
+  // Filterknoppen vertalen
+  document.querySelector('.filter-btn[data-filter="all"]').textContent = translations.FILTER_ALL || "All";
+  document.querySelector('.filter-btn[data-filter="active"]').textContent = translations.FILTER_ACTIVE || "Active";
+  document.querySelector('.filter-btn[data-filter="done"]').textContent = translations.FILTER_DONE || "Done";
 }
 
 langSelect.addEventListener("change", async()=>{ lang=langSelect.value; await loadTranslations(); });
