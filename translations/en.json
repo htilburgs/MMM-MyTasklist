@@ -1,8 +1,7 @@
 {
   "NO_TASKS": "No tasks",
-  "ADD_TASK": "Add",
+  "TASKS_TITLE": "My Tasklist",
   "PLACEHOLDER": "New task...",
-  "TITLE": "My Tasklist",
-  "addButton": "Add",
-  "deleteButton": "Delete"
+  "ADD_BUTTON": "Add",
+  "DELETE_BUTTON": "Delete"
 }
