@@ -9,6 +9,7 @@ module.exports = NodeHelper.create({
     this.tasksFile = path.join(__dirname, "tasks.json");
     this.clients = [];
     this.setupServer();
+    console.log("MMM-MyTasklist helper gestart");
   },
 
   setupServer() {
@@ -23,21 +24,24 @@ module.exports = NodeHelper.create({
 
     const updateTasks = (tasksData, res) => {
       this.saveTasks(tasksData);
-      // Mirror-module krijgt array
+      // Mirror krijgt alleen array
       this.sendSocketNotification("TASKS", tasksData.tasks);
-      // index.html krijgt object
+      // Index.html krijgt object
       broadcastTasks(tasksData);
       if(res) res.json(tasksData);
     };
 
+    // Add task
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if(!text) return res.status(400).send("Geen tekst opgegeven");
+
       const tasksData = this.loadTasks();
       tasksData.tasks.push({ id: Date.now(), text, done: false });
       updateTasks(tasksData, res);
     });
 
+    // Toggle task
     this.app.post("/api/toggle/:id", (req, res) => {
       const tasksData = this.loadTasks();
       const task = tasksData.tasks.find(t => t.id == req.params.id);
@@ -45,14 +49,17 @@ module.exports = NodeHelper.create({
       updateTasks(tasksData, res);
     });
 
+    // Delete task
     this.app.post("/api/delete/:id", (req, res) => {
       const tasksData = this.loadTasks();
       tasksData.tasks = tasksData.tasks.filter(t => t.id != req.params.id);
       updateTasks(tasksData, res);
     });
 
+    // Get tasks
     this.app.get("/api/tasks", (req, res) => res.json(this.loadTasks()));
 
+    // Translations
     this.app.get("/api/lang", (req, res) => {
       const lang = req.query.lang || "nl";
       try { res.json(require(path.join(__dirname, "translations", `${lang}.json`))); }
@@ -85,16 +92,14 @@ module.exports = NodeHelper.create({
   socketNotificationReceived(notification, payload) {
     if(notification === "GET_TASKS") {
       const tasksData = this.loadTasks();
-      // Mirror-module krijgt array
-      this.sendSocketNotification("TASKS", tasksData.tasks);
+      this.sendSocketNotification("TASKS", tasksData.tasks); // array voor Mirror
     }
     if(notification === "TOGGLE_TASK") {
       const tasksData = this.loadTasks();
       const task = tasksData.tasks.find(t => t.id===payload);
       if(task) task.done = !task.done;
       this.saveTasks(tasksData);
-      this.sendSocketNotification("TASKS", tasksData.tasks); // array voor Mirror
-      // broadcast voor index.html
+      this.sendSocketNotification("TASKS", tasksData.tasks);
       const message = JSON.stringify({ type: "TASKS", tasks: tasksData });
       this.clients.forEach(ws => { if(ws.readyState===WebSocket.OPEN) ws.send(message); });
     }
