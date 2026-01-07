@@ -1,5 +1,7 @@
 {
   "NO_TASKS": "Aucune tâche",
-  "ADD_TASK": "Ajouter",
-  "PLACEHOLDER": "Nouvelle tâche..."
+  "TASKS_TITLE": "Ma liste de tâches",
+  "PLACEHOLDER": "Nouvelle tâche...",
+  "ADD_BUTTON": "Ajouter",
+  "DELETE_BUTTON": "Supprimer"
 }
