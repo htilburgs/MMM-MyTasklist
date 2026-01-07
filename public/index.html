@@ -1,25 +1,103 @@
-Magic Mirror Task List
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyTasklist Webinterface</title>
+<title>Magic Mirror Task List</title>
 <style>
-body { font-family: Arial; max-width:700px; margin:20px auto; background:#f0f0f0; padding:0 10px; }
-#langSelect { display:block; margin:0 auto 20px; padding:6px 12px; font-size:1rem; }
-form { display:flex; margin-bottom:20px; }
-input[type=text] { flex:1; padding:10px; font-size:1rem; border:1px solid #ccc; border-radius:5px 0 0 5px; }
-button { padding:10px 20px; font-size:1rem; border:none; background:#007bff; color:white; cursor:pointer; border-radius:0 5px 5px 0; }
+body {
+  font-family: Arial, sans-serif;
+  max-width:700px;
+  margin:20px auto;
+  background:#f0f0f0;
+  padding:0 10px;
+}
+
+#langSelect {
+  display:block;
+  margin:0 auto 20px;
+  padding:6px 12px;
+  font-size:1rem;
+}
+
+form {
+  display:flex;
+  margin-bottom:20px;
+}
+
+input[type=text] {
+  flex:1;
+  padding:10px;
+  font-size:1rem;
+  border:1px solid #ccc;
+  border-radius:5px 0 0 5px;
+}
+
+button {
+  padding:10px 20px;
+  font-size:1rem;
+  border:none;
+  background:#007bff;
+  color:white;
+  cursor:pointer;
+  border-radius:0 5px 5px 0;
+}
+
 button:hover { background:#0056b3; }
-ul { list-style:none; padding:0; margin:0; max-height:500px; overflow-y:auto; }
-li { display:flex; align-items:center; justify-content:space-between; padding:12px 15px; margin-bottom:10px; background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.1); cursor:grab; }
-li.done label { text-decoration:line-through; color:#999; }
-label { flex:1; font-size:1.1rem; cursor:pointer; }
-.delete-btn { background:#dc3545; border:none; color:white; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:0.9rem; }
+
+ul {
+  list-style:none;
+  padding:0;
+  margin:0;
+  max-height:500px;
+  overflow-y:auto;
+}
+
+li {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 15px;
+  margin-bottom:10px;
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 2px 4px rgba(0,0,0,0.1);
+  cursor:grab;
+  transition: transform 0.2s ease;
+}
+
+li.done label {
+  text-decoration:line-through;
+  color:#999;
+}
+
+label {
+  flex:1;
+  font-size:1.1rem;
+  cursor:pointer;
+}
+
+.delete-btn {
+  background:#dc3545;
+  border:none;
+  color:white;
+  padding:6px 12px;
+  border-radius:5px;
+  cursor:pointer;
+  font-size:0.9rem;
+}
+
 .delete-btn:hover { background:#a71d2a; }
-input[type=checkbox] { margin-right:10px; transform:scale(1.3); cursor:pointer; }
+
+input[type=checkbox] {
+  margin-right:10px;
+  transform:scale(1.3);
+  cursor:pointer;
+}
+
+/* Drag & Drop Styles */
+li.over { border:2px dashed #007bff; background:#e6f0ff; }
+li.dragging { opacity:0.5; }
 </style>
 </head>
 <body>
@@ -47,13 +125,17 @@ const addBtn = document.getElementById("addBtn");
 
 let tasks = [];
 let translations = {};
-let lang = navigator.language.startsWith("en")?"en":navigator.language.startsWith("de")?"de":navigator.language.startsWith("fr")?"fr":"nl";
+let lang = navigator.language.startsWith("en")?"en":
+           navigator.language.startsWith("de")?"de":
+           navigator.language.startsWith("fr")?"fr":"nl";
 langSelect.value = lang;
 
 // ===================
 // WebSocket realtime
 // ===================
-const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
+const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+const ws = new WebSocket(`${protocol}://${window.location.hostname}:8123`);
+
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){
@@ -87,32 +169,99 @@ langSelect.addEventListener("change", async ()=>{
 });
 
 // ===================
+// Drag & Drop
+// ===================
+let dragSrcEl = null;
+
+function handleDragStart(e){
+  dragSrcEl = this;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", this.dataset.id);
+  this.classList.add("dragging");
+}
+
+function handleDragOver(e){
+  if(e.preventDefault) e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  return false;
+}
+
+function handleDragEnter(){ this.classList.add("over"); }
+function handleDragLeave(){ this.classList.remove("over"); }
+
+function handleDrop(e){
+  if(e.stopPropagation) e.stopPropagation();
+  const draggedId = e.dataTransfer.getData("text/plain");
+  const targetId = this.dataset.id;
+
+  if(draggedId !== targetId){
+    const draggedIndex = tasks.findIndex(t=>t.id==draggedId);
+    const targetIndex = tasks.findIndex(t=>t.id==targetId);
+    const [movedTask] = tasks.splice(draggedIndex,1);
+    tasks.splice(targetIndex,0,movedTask);
+    renderTasks();
+
+    // Notify server of new order
+    if(ws.readyState===WebSocket.OPEN){
+      fetch("/api/reorder", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({tasks: tasks.map(t=>t.id)})
+      });
+    }
+  }
+  return false;
+}
+
+function handleDragEnd(){
+  this.classList.remove("dragging");
+  document.querySelectorAll("#taskList li").forEach(li=>li.classList.remove("over"));
+}
+
+// ===================
 // Render tasks
 // ===================
 function renderTasks(){
   taskList.innerHTML="";
+  if(tasks.length===0){
+    const emptyMsg = document.createElement("li");
+    emptyMsg.textContent = translations.NO_TASKS || "No tasks yet...";
+    emptyMsg.style.textAlign="center";
+    emptyMsg.style.color="#666";
+    taskList.appendChild(emptyMsg);
+    return;
+  }
+
   tasks.forEach(task=>{
     const li = document.createElement("li");
     li.dataset.id = task.id;
+    li.draggable = true;
+    li.addEventListener("dragstart", handleDragStart);
+    li.addEventListener("dragenter", handleDragEnter);
+    li.addEventListener("dragover", handleDragOver);
+    li.addEventListener("dragleave", handleDragLeave);
+    li.addEventListener("drop", handleDrop);
+    li.addEventListener("dragend", handleDragEnd);
+
     if(task.done) li.classList.add("done");
 
     const label = document.createElement("label");
     const checkbox = document.createElement("input");
     checkbox.type="checkbox";
-    checkbox.checked=task.done;
-    checkbox.addEventListener("change", async ()=>{ await toggleTask(task.id); });
+    checkbox.checked = task.done;
+    checkbox.addEventListener("change", async ()=> await toggleTask(task.id));
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode(task.text));
 
     const deleteBtn = document.createElement("button");
-    deleteBtn.className="delete-btn";
-    deleteBtn.addEventListener("click", async ()=>{ await deleteTask(task.id); });
+    deleteBtn.className = "delete-btn";
+    deleteBtn.textContent = translations.DELETE_BUTTON || "Delete";
+    deleteBtn.addEventListener("click", async ()=> await deleteTask(task.id));
 
     li.appendChild(label);
     li.appendChild(deleteBtn);
     taskList.appendChild(li);
   });
-  applyTranslations();
 }
 
 // ===================
@@ -122,24 +271,25 @@ taskForm.addEventListener("submit", async e=>{
   e.preventDefault();
   const text = taskText.value.trim();
   if(!text) return;
-  if(ws.readyState === WebSocket.OPEN){
-    await fetch("/api/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text})});
+  if(ws.readyState===WebSocket.OPEN){
+    await fetch("/api/tasks", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({text})
+    });
     taskText.value="";
-    // UI update via WebSocket
   }
 });
 
 async function toggleTask(id){
-  if(ws.readyState === WebSocket.OPEN){
+  if(ws.readyState===WebSocket.OPEN){
     await fetch(`/api/toggle/${id}`, {method:"POST"});
-    // UI update via WebSocket
   }
 }
 
 async function deleteTask(id){
-  if(ws.readyState === WebSocket.OPEN){
+  if(ws.readyState===WebSocket.OPEN){
     await fetch(`/api/delete/${id}`, {method:"POST"});
-    // UI update via WebSocket
   }
 }
 
