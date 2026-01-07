@@ -1,15 +1,19 @@
 Module.register("MMM-MyTasklist", {
   defaults: {
-    updateInterval: 300000, // 5 minuten
-    showCompleted: true,
-    maxTasks: null,
-    tasksFile: "tasks.json" 
+    tasksFile: "tasks.json",    // JSON-bestand met taken
+    updateInterval: 300000,     // 5 minuten
+    showCompleted: true,        // toon voltooide taken
+    maxTasks: null              // null = geen limiet
   },
-  
+
   start() {
     this.tasks = [];
+
+    // Stuur bestandspad naar helper
+    this.sendSocketNotification("INIT", this.config.tasksFile);
     this.sendSocketNotification("GET_TASKS");
 
+    // Periodieke update
     this.startUpdateTimer();
   },
 
@@ -26,9 +30,7 @@ Module.register("MMM-MyTasklist", {
   getTranslations() {
     return {
       nl: "translations/nl.json",
-      en: "translations/en.json",
-      de: "translations/de.json",
-      fr: "translations/fr.json"
+      en: "translations/en.json"
     };
   },
 
@@ -44,27 +46,27 @@ Module.register("MMM-MyTasklist", {
     wrapper.className = "MMM-MyTasklist";
 
     if (!this.tasks.length) {
-      wrapper.textContent = this.translate("NO_TASKS");
+      wrapper.textContent = this.translate("NO_TASKS") || "Geen taken";
       return wrapper;
     }
 
     const ul = document.createElement("ul");
 
+    // Filter op showCompleted
     let visibleTasks = this.tasks.filter(
       task => this.config.showCompleted || !task.done
     );
 
-    // Sorteer: onafgerond eerst
+    // Sorteer onafgeronde taken eerst
     visibleTasks.sort((a, b) => a.done - b.done);
 
-    // maxTasks correct afhandelen (ook 0)
+    // Limiteer aantal taken
     if (Number.isInteger(this.config.maxTasks)) {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
     }
 
-    visibleTasks.forEach(task => {
-      ul.appendChild(this.createTaskElement(task));
-    });
+    // Taken toevoegen
+    visibleTasks.forEach(task => ul.appendChild(this.createTaskElement(task)));
 
     wrapper.appendChild(ul);
     return wrapper;
@@ -78,8 +80,8 @@ Module.register("MMM-MyTasklist", {
     checkbox.type = "checkbox";
     checkbox.checked = task.done;
 
+    // Optimistische UI-update
     checkbox.addEventListener("change", () => {
-      // Optimistische UI-update
       task.done = checkbox.checked;
       this.updateDom(200);
 
@@ -88,10 +90,7 @@ Module.register("MMM-MyTasklist", {
 
     const span = document.createElement("span");
     span.textContent = task.text;
-
-    if (task.done) {
-      span.classList.add("done");
-    }
+    if (task.done) span.classList.add("done");
 
     li.appendChild(checkbox);
     li.appendChild(span);
