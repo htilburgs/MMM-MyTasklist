@@ -1,34 +1,18 @@
 Module.register("MMM-MyTasklist", {
   defaults: {
-    updateInterval: 300000,  // 5 minutes
-    showCompleted: true,     // Show Completed tasks on dashboard (true, false)
-    maxTasks: null,          // null = all tasks, otherwise number
-    lang: null               // Automatic Language selection
+    updateInterval: 300000, // 5 minuten
+    showCompleted: true,    // toon voltooide taken
+    maxTasks: null          // null = geen limiet, anders bijv. 5
   },
 
   start() {
     this.tasks = [];
-    this.translations = {};
     this.sendSocketNotification("GET_TASKS");
-
-    // Laad vertalingen
-    this.loadTranslations();
 
     // Periodieke update
     this.updateTimer = setInterval(() => {
       this.sendSocketNotification("GET_TASKS");
     }, this.config.updateInterval);
-  },
-
-  async loadTranslations() {
-    const lang = this.config.lang || navigator.language.startsWith("en") ? "en" : "nl";
-    try {
-      const res = await fetch(`http://localhost:8123/api/lang?lang=${lang}`);
-      this.translations = await res.json();
-      this.updateDom();
-    } catch (e) {
-      console.error("Kan vertalingen niet laden:", e);
-    }
   },
 
   getStyles() {
@@ -46,12 +30,8 @@ Module.register("MMM-MyTasklist", {
     const wrapper = document.createElement("div");
     wrapper.className = "MMM-MyTasklist";
 
-    const title = document.createElement("h2");
-    title.textContent = this.translations.TASKS_TITLE || "MyTasklist";
-    wrapper.appendChild(title);
-
     if (!this.tasks.length) {
-      wrapper.innerHTML += `<p>${this.translations.NO_TASKS || "No tasks"}</p>`;
+      wrapper.innerHTML = this.translate("NO_TASKS") || "Geen taken";
       return wrapper;
     }
 
@@ -60,7 +40,7 @@ Module.register("MMM-MyTasklist", {
     // Filter op showCompleted
     let visibleTasks = this.tasks.filter(task => this.config.showCompleted || !task.done);
 
-    // Limiteer aantal taken
+    // Limiteer aantal taken als maxTasks is ingesteld
     if (this.config.maxTasks && visibleTasks.length > this.config.maxTasks) {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
     }
@@ -89,9 +69,15 @@ Module.register("MMM-MyTasklist", {
 
     li.appendChild(checkbox);
     li.appendChild(span);
+
     return li;
   },
 
-  suspend() { if (this.updateTimer) clearInterval(this.updateTimer); },
-  resume() { this.sendSocketNotification("GET_TASKS"); }
+  suspend() {
+    if (this.updateTimer) clearInterval(this.updateTimer);
+  },
+
+  resume() {
+    this.sendSocketNotification("GET_TASKS");
+  }
 });
