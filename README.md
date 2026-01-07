@@ -31,13 +31,14 @@ Add the module to your modules array in your config.js.
 {
   module: "MMM-MyTasklist",
   position: "top_left",
-  header: "MyTasklist",
+  header: "MyTaskList",
   disabled: false,
   config: {
-      updateInterval: 300000,   // 5 minutes
-      showCompleted: true,      // true or false
-      maxTasks: null            // null = no limit, use number (1 or 2 or ...) for limiting tasks
-      }
+    tasksFile: "modules/MMM-MyTasklist/tasks.json",
+    updateInterval: 300000,
+    showCompleted: true,
+    maxTasks: null
+  }
 },
 ```
 ## Load update page for Tasklist
