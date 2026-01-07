@@ -110,6 +110,8 @@
   <select id="langSelect">
     <option value="nl">Nederlands</option>
     <option value="en">English</option>
+    <option value="de">Deutsch</option>
+    <option value="fr">Français</option>
   </select>
 
   <form id="taskForm">
@@ -129,25 +131,26 @@
 
     let tasks = [];
     let translations = {};
-    let lang = navigator.language.startsWith("en") ? "en" : "nl";
+    let lang = navigator.language.startsWith("en") ? "en" :
+               navigator.language.startsWith("de") ? "de" :
+               navigator.language.startsWith("fr") ? "fr" : "nl";
 
     langSelect.value = lang;
 
     /* =========================
-       Load vertalingen
+       Vertalingen ophalen en toepassen
     ========================= */
     async function loadTranslations() {
       const res = await fetch(`/api/lang?lang=${lang}`);
       translations = await res.json();
 
-      // Pas teksten aan
-      titleElem.textContent = translations.title;
-      taskText.placeholder = translations.placeholder;
-      addBtn.textContent = translations.addButton;
+      titleElem.textContent = translations.TASKS_TITLE || "MyTasklist";
+      taskText.placeholder = translations.PLACEHOLDER || "New task...";
+      addBtn.textContent = translations.ADD_BUTTON || "Add";
 
-      // Pas delete buttons in lijst aan
+      // update delete buttons
       document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.textContent = translations.deleteButton;
+        btn.textContent = translations.DELETE_BUTTON || "Delete";
       });
     }
 
@@ -157,7 +160,7 @@
     });
 
     /* =========================
-       Load en render taken
+       Taken laden en renderen
     ========================= */
     async function loadTasks() {
       const res = await fetch("/api/tasks");
@@ -184,7 +187,7 @@
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
-        deleteBtn.textContent = translations.deleteButton; // vertaling gebruiken
+        deleteBtn.textContent = translations.DELETE_BUTTON || "Delete";
         deleteBtn.addEventListener("click", () => deleteTask(task.id));
 
         li.appendChild(label);
