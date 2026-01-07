@@ -1,4 +1,5 @@
-<h2 id="tasksTitle">Mijn Taken</h2>
+<link rel="stylesheet" href="MMM-MyTasklist.css">
+
 <select id="langSelect">
   <option value="nl">Nederlands</option>
   <option value="en">English</option>
@@ -17,11 +18,10 @@
 const taskList = document.getElementById("taskList");
 const taskForm = document.getElementById("taskForm");
 const taskText = document.getElementById("taskText");
-const tasksTitle = document.getElementById("tasksTitle");
 const langSelect = document.getElementById("langSelect");
 const addBtn = document.getElementById("addBtn");
 
-let tasksData = { tasks_title: "Mijn Taken", tasks: [] };
+let tasksData = { tasks: [] };
 let translations = {};
 let lang = "nl";
 langSelect.value = lang;
@@ -31,7 +31,6 @@ ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){
     tasksData = data.tasks;
-    tasksTitle.textContent = translations.TASKS_TITLE || tasksData.tasks_title || "Mijn Taken";
     renderTasks(tasksData.tasks);
   }
 };
@@ -41,14 +40,6 @@ async function loadTranslations(){
     const res = await fetch(`/api/lang?lang=${lang}`);
     translations = await res.json();
   }catch{ translations={}; }
-  applyTranslations();
-}
-
-function applyTranslations(){
-  tasksTitle.textContent = translations.TASKS_TITLE || tasksData.tasks_title || "Mijn Taken";
-  taskText.placeholder = translations.PLACEHOLDER || "New task...";
-  addBtn.textContent = translations.ADD_BUTTON || "Add";
-  document.querySelectorAll(".delete-btn").forEach(btn=>btn.textContent = translations.DELETE_BUTTON || "Delete");
 }
 
 langSelect.addEventListener("change", async ()=>{
@@ -79,7 +70,6 @@ function renderTasks(taskArray){
     li.appendChild(deleteBtn);
     taskList.appendChild(li);
   });
-  applyTranslations();
 }
 
 taskForm.addEventListener("submit", async e=>{
