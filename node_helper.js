@@ -18,16 +18,19 @@ module.exports = NodeHelper.create({
     this.app.use(express.static(path.join(__dirname, "public")));
 
     const broadcastTasks = (tasksData) => {
-      const message = JSON.stringify({ type: "TASKS", tasks: tasksData });
-      this.clients.forEach(ws => { if(ws.readyState===WebSocket.OPEN) ws.send(message); });
+      const msg = JSON.stringify({ type: "TASKS", tasks: tasksData });
+      this.clients.forEach(ws => { if(ws.readyState===WebSocket.OPEN) ws.send(msg); });
     };
 
     const updateTasks = (tasksData, res) => {
       this.saveTasks(tasksData);
+
       // Mirror krijgt alleen array
       this.sendSocketNotification("TASKS", tasksData.tasks);
-      // Index.html krijgt object
+
+      // index.html krijgt object
       broadcastTasks(tasksData);
+
       if(res) res.json(tasksData);
     };
 
@@ -72,7 +75,6 @@ module.exports = NodeHelper.create({
     this.wss.on("connection", ws => {
       this.clients.push(ws);
       ws.send(JSON.stringify({ type: "TASKS", tasks: this.loadTasks() }));
-
       ws.on("close", () => { this.clients = this.clients.filter(c => c!==ws); });
     });
   },
@@ -90,18 +92,18 @@ module.exports = NodeHelper.create({
   },
 
   socketNotificationReceived(notification, payload) {
+    const tasksData = this.loadTasks();
     if(notification === "GET_TASKS") {
-      const tasksData = this.loadTasks();
-      this.sendSocketNotification("TASKS", tasksData.tasks); // array voor Mirror
+      // Mirror-module krijgt array
+      this.sendSocketNotification("TASKS", tasksData.tasks);
     }
     if(notification === "TOGGLE_TASK") {
-      const tasksData = this.loadTasks();
-      const task = tasksData.tasks.find(t => t.id===payload);
+      const task = tasksData.tasks.find(t => t.id === payload);
       if(task) task.done = !task.done;
       this.saveTasks(tasksData);
       this.sendSocketNotification("TASKS", tasksData.tasks);
-      const message = JSON.stringify({ type: "TASKS", tasks: tasksData });
-      this.clients.forEach(ws => { if(ws.readyState===WebSocket.OPEN) ws.send(message); });
+      const msg = JSON.stringify({ type: "TASKS", tasks: tasksData });
+      this.clients.forEach(ws => { if(ws.readyState===WebSocket.OPEN) ws.send(msg); });
     }
   }
 });
