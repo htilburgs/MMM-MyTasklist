@@ -3,5 +3,8 @@
   "TASKS_TITLE": "My Tasklist",
   "PLACEHOLDER": "New task...",
   "ADD_BUTTON": "Add",
-  "DELETE_BUTTON": "Delete"
+  "DELETE_BUTTON": "Delete",
+  "FILTER_ALL": "All",
+  "FILTER_ACTIVE": "Active",
+  "FILTER_DONE": "Done"
 }
