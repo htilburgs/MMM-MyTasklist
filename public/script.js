@@ -41,11 +41,13 @@ function renderTasks(){
     li.dataset.id=task.id;
     li.classList.toggle("done",task.done);
 
+    // Drag handle
     const handle=document.createElement("span");
     handle.className="drag-handle";
     handle.textContent="≡";
     li.appendChild(handle);
 
+    // Label + checkbox
     const label=document.createElement("label");
     const checkbox=document.createElement("input");
     checkbox.type="checkbox";
@@ -55,27 +57,53 @@ function renderTasks(){
     label.appendChild(document.createTextNode(task.text));
     li.appendChild(label);
 
+    // Delete button
     const deleteBtn=document.createElement("button");
     deleteBtn.className="delete-btn";
     deleteBtn.addEventListener("click",()=>deleteTask(task.id));
     li.appendChild(deleteBtn);
 
+    // Drag & Drop
     let dragSrcIndex=null;
-    handle.addEventListener("mousedown",()=>{li.draggable=true;});
-    li.addEventListener("dragstart",()=>{ dragSrcIndex=[...taskList.children].indexOf(li); li.classList.add("dragging"); });
-    li.addEventListener("dragover",e=>{ e.preventDefault(); const dragging=document.querySelector(".dragging"); const after=getDragAfterElement(taskList,e.clientY); if(!after) taskList.appendChild(dragging); else taskList.insertBefore(dragging,after); });
+
+    handle.addEventListener("mousedown",()=>{ li.draggable=true; });
+
+    li.addEventListener("dragstart",()=>{ 
+      dragSrcIndex=[...taskList.children].indexOf(li); 
+      li.classList.add("dragging"); 
+    });
+
+    li.addEventListener("dragover",e=>{
+      e.preventDefault();
+      const dragging=document.querySelector(".dragging");
+      const after=getDragAfterElement(taskList,e.clientY);
+
+      // Clear previous highlights
+      taskList.querySelectorAll(".drop-target").forEach(el=>el.classList.remove("drop-target"));
+
+      if(!after){
+        taskList.appendChild(dragging);
+      } else {
+        after.classList.add("drop-target"); // highlight drop
+        taskList.insertBefore(dragging,after);
+      }
+    });
+
     li.addEventListener("dragend", async()=>{
       li.classList.remove("dragging");
       li.draggable=false;
+      taskList.querySelectorAll(".drop-target").forEach(el=>el.classList.remove("drop-target"));
       const orderedIds=[...taskList.children].map(li=>Number(li.dataset.id));
       await fetch("/api/reorder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderedIds})});
     });
 
     taskList.appendChild(li);
   });
+
   applyTranslations();
 }
 
+// Helper for drag position
 function getDragAfterElement(container,y){
   const draggable=[...container.querySelectorAll("li:not(.dragging)")];
   return draggable.reduce((closest,child)=>{
@@ -86,6 +114,7 @@ function getDragAfterElement(container,y){
   },{offset:Number.NEGATIVE_INFINITY}).element;
 }
 
+// Task actions
 taskForm.addEventListener("submit", async e=>{
   e.preventDefault();
   const text=taskText.value.trim();
@@ -97,6 +126,7 @@ taskForm.addEventListener("submit", async e=>{
 async function toggleTask(id){ await fetch(`/api/toggle/${id}`,{method:"POST"}); }
 async function deleteTask(id){ await fetch(`/api/delete/${id}`,{method:"POST"}); }
 
+// Filters
 filterBtns.forEach(btn=>{
   btn.addEventListener("click",()=>{
     filterBtns.forEach(b=>b.classList.remove("active"));
@@ -106,6 +136,7 @@ filterBtns.forEach(btn=>{
   });
 });
 
+// Init
 async function init(){
   await loadTranslations();
   try{ const res=await fetch("/api/tasks"); tasks=await res.json(); }catch{ tasks=[]; }
