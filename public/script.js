@@ -11,13 +11,25 @@ const filterBtns = document.querySelectorAll(".filter-btn");
 // ===================
 // State
 // ===================
-let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+let tasks = [];
 let translations = {};
-let lang = localStorage.getItem("lang") || (navigator.language.startsWith("en") ? "en" :
+let lang = navigator.language.startsWith("en") ? "en" :
            navigator.language.startsWith("de") ? "de" :
-           navigator.language.startsWith("fr") ? "fr" : "nl");
+           navigator.language.startsWith("fr") ? "fr" : "nl";
 langSelect.value = lang;
 let currentFilter = "all";
+
+// ===================
+// WebSocket Realtime
+// ===================
+const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
+ws.onmessage = event => {
+  const data = JSON.parse(event.data);
+  if (data.type === "TASKS") {
+    tasks = data.tasks;
+    renderTasks();
+  }
+};
 
 // ===================
 // Translations
@@ -30,7 +42,6 @@ async function loadTranslations() {
     translations = {};
   }
   applyTranslations();
-  localStorage.setItem("lang", lang);
 }
 
 function applyTranslations() {
@@ -68,7 +79,6 @@ function renderTasks() {
     li.addEventListener("drop", dragDrop);
     li.addEventListener("dragend", dragEnd);
 
-    // Checkbox + label
     const label = document.createElement("label");
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -77,7 +87,6 @@ function renderTasks() {
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode(task.text));
 
-    // Delete button
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-btn";
     deleteBtn.addEventListener("click", () => deleteTask(task.id));
@@ -87,49 +96,42 @@ function renderTasks() {
     taskList.appendChild(li);
   });
   applyTranslations();
-  saveTasks();
 }
 
 // ===================
-// Task Actions
+// Task Actions (server-side)
 // ===================
-taskForm.addEventListener("submit", e => {
+taskForm.addEventListener("submit", async e => {
   e.preventDefault();
   const text = taskText.value.trim();
   if (!text) return;
 
-  const id = Date.now();
-  tasks.push({ id, text, done: false });
+  await fetch("/api/tasks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
   taskText.value = "";
-  renderTasks();
+  // UI update via WebSocket
 });
 
-function toggleTask(id) {
-  const task = tasks.find(t => t.id === id);
-  if (task) task.done = !task.done;
-  renderTasks();
+async function toggleTask(id) {
+  await fetch(`/api/toggle/${id}`, { method: "POST" });
+  // UI update via WebSocket
 }
 
-function deleteTask(id) {
-  tasks = tasks.filter(t => t.id !== id);
-  renderTasks();
+async function deleteTask(id) {
+  await fetch(`/api/delete/${id}`, { method: "POST" });
+  // UI update via WebSocket
 }
 
 // ===================
-// Drag & Drop
+// Drag & Drop (client-side only)
 // ===================
 let dragSrcEl = null;
 
-function dragStart(e) {
-  dragSrcEl = this;
-  e.dataTransfer.effectAllowed = "move";
-}
-
-function dragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = "move";
-}
-
+function dragStart(e) { dragSrcEl = this; e.dataTransfer.effectAllowed = "move"; }
+function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }
 function dragDrop(e) {
   e.stopPropagation();
   if (dragSrcEl !== this) {
@@ -139,12 +141,10 @@ function dragDrop(e) {
     const tgtIndex = tasks.findIndex(t => t.id == tgtId);
     tasks.splice(tgtIndex, 0, tasks.splice(srcIndex, 1)[0]);
     renderTasks();
+    // Optioneel: POST naar server om volgorde op te slaan
   }
 }
-
-function dragEnd() {
-  dragSrcEl = null;
-}
+function dragEnd() { dragSrcEl = null; }
 
 // ===================
 // Filters
@@ -159,17 +159,15 @@ filterBtns.forEach(btn => {
 });
 
 // ===================
-// LocalStorage
-// ===================
-function saveTasks() {
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-}
-
-// ===================
 // Init
 // ===================
 async function init() {
   await loadTranslations();
+  // Haal taken op van server
+  try {
+    const res = await fetch("/api/tasks");
+    tasks = await res.json();
+  } catch { tasks = []; }
   renderTasks();
 }
 init();
