@@ -7,10 +7,7 @@ const filterBtns = document.querySelectorAll(".filter-btn");
 
 let tasks = [];
 let translations = {};
-let lang = navigator.language.startsWith("en") ? "en" :
-           navigator.language.startsWith("de") ? "de" :
-           navigator.language.startsWith("fr") ? "fr" : "nl";
-langSelect.value = lang;
+let lang = "nl";
 let currentFilter = "all";
 
 const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
@@ -35,7 +32,18 @@ function applyTranslations(){
   document.querySelector('.filter-btn[data-filter="done"]').textContent = translations.FILTER_DONE || "Done";
 }
 
-langSelect.addEventListener("change", async()=>{ lang=langSelect.value; await loadTranslations(); });
+// Taal wisselen + opslaan in backend
+langSelect.addEventListener("change", async () => {
+  lang = langSelect.value;
+  try {
+    await fetch("/api/lang", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lang })
+    });
+  } catch(e){ console.error(e); }
+  await loadTranslations();
+});
 
 function renderTasks(){
   taskList.innerHTML="";
@@ -72,28 +80,18 @@ function renderTasks(){
 
     // Drag & Drop
     handle.addEventListener("mousedown",()=>{ li.draggable=true; });
-
     li.addEventListener("dragstart",()=>{ li.classList.add("dragging"); });
-
     li.addEventListener("dragover", e=>{
       e.preventDefault();
       const dragging=document.querySelector(".dragging");
       const after=getDragAfterElement(taskList,e.clientY);
-
       taskList.querySelectorAll(".drop-target").forEach(el=>el.classList.remove("drop-target"));
-
       if(!after) taskList.appendChild(dragging);
-      else {
-        after.classList.add("drop-target");
-        taskList.insertBefore(dragging,after);
-      }
+      else { after.classList.add("drop-target"); taskList.insertBefore(dragging,after); }
     });
-
     li.addEventListener("dragend", async()=>{
-      li.classList.remove("dragging");
-      li.draggable=false;
+      li.classList.remove("dragging"); li.draggable=false;
       taskList.querySelectorAll(".drop-target").forEach(el=>el.classList.remove("drop-target"));
-
       const orderedIds=[...taskList.children].map(li=>Number(li.dataset.id));
       await fetch("/api/reorder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderedIds})});
     });
@@ -104,7 +102,6 @@ function renderTasks(){
   applyTranslations();
 }
 
-// Helper for drag position
 function getDragAfterElement(container,y){
   const draggable=[...container.querySelectorAll("li:not(.dragging)")];
   return draggable.reduce((closest,child)=>{
@@ -123,7 +120,6 @@ taskForm.addEventListener("submit", async e=>{
   await fetch("/api/tasks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
   taskText.value="";
 });
-
 async function toggleTask(id){ await fetch(`/api/toggle/${id}`,{method:"POST"}); }
 async function deleteTask(id){ await fetch(`/api/delete/${id}`,{method:"POST"}); }
 
@@ -139,8 +135,15 @@ filterBtns.forEach(btn=>{
 
 // Init
 async function init(){
+  try {
+    const res = await fetch("/api/tasks");
+    const data = await res.json();
+    tasks = data.tasks || data;
+    if(data.lang) lang = data.lang;
+    langSelect.value = lang;
+  } catch { tasks=[]; }
+
   await loadTranslations();
-  try{ const res=await fetch("/api/tasks"); tasks=await res.json(); }catch{ tasks=[]; }
   renderTasks();
 }
 init();
