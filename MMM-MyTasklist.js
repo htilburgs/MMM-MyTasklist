@@ -20,7 +20,7 @@ Module.register("MMM-MyTasklist", {
 
   socketNotificationReceived(notification, payload) {
     if (notification === "TASKS") {
-      // payload is een array van taken
+      // Mirror-module verwacht een array
       this.tasks = Array.isArray(payload) ? payload : [];
       this.updateDom();
     }
@@ -43,7 +43,6 @@ Module.register("MMM-MyTasklist", {
     }
 
     visibleTasks.forEach(task => ul.appendChild(this.createTaskElement(task)));
-
     wrapper.appendChild(ul);
     return wrapper;
   },
