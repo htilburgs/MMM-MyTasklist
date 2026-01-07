@@ -17,77 +17,44 @@ module.exports = NodeHelper.create({
     this.app.use(express.json());
     this.app.use(express.static(path.join(__dirname, "public")));
 
-    // ====================
-    // API: Add task
-    // ====================
+    const sendUpdated = (tasksData, res) => {
+      this.saveTasks(tasksData);
+      this.broadcastTasks(tasksData);
+      this.sendSocketNotification("TASKS", tasksData);
+      if(res) res.json(tasksData);
+    };
+
+    // Add task
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
-      if (!text) return res.status(400).send("Geen tekst opgegeven");
+      if(!text) return res.status(400).send("Geen tekst opgegeven");
 
-      const tasks = this.loadTasks();
-      tasks.push({ id: Date.now(), text, done: false });
-      this.saveTasks(tasks);
-
-      // Realtime updates
-      this.broadcastTasks(tasks);        // naar browser
-      this.sendSocketNotification("TASKS", tasks); // naar MagicMirror
-
-      res.json(tasks);
+      const tasksData = this.loadTasks();
+      tasksData.tasks.push({ id: Date.now(), text, done: false });
+      sendUpdated(tasksData, res);
     });
 
-    // ====================
-    // API: Toggle task
-    // ====================
+    // Toggle task
     this.app.post("/api/toggle/:id", (req, res) => {
-      const tasks = this.loadTasks();
-      const task = tasks.find(t => t.id == req.params.id);
-      if (task) task.done = !task.done;
-      this.saveTasks(tasks);
-
-      this.broadcastTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
-
-      res.json(tasks);
+      const tasksData = this.loadTasks();
+      const task = tasksData.tasks.find(t => t.id == req.params.id);
+      if(task) task.done = !task.done;
+      sendUpdated(tasksData, res);
     });
 
-    // ====================
-    // API: Delete task
-    // ====================
+    // Delete task
     this.app.post("/api/delete/:id", (req, res) => {
-      let tasks = this.loadTasks();
-      tasks = tasks.filter(t => t.id != req.params.id);
-      this.saveTasks(tasks);
-
-      this.broadcastTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
-
-      res.json(tasks);
+      const tasksData = this.loadTasks();
+      tasksData.tasks = tasksData.tasks.filter(t => t.id != req.params.id);
+      sendUpdated(tasksData, res);
     });
 
-    // ====================
-    // API: Reorder tasks
-    // ====================
-    this.app.post("/api/tasks/reorder", (req, res) => {
-      const newTasks = req.body.tasks;
-      if (!Array.isArray(newTasks)) return res.status(400).send("Invalid tasks array");
-      this.saveTasks(newTasks);
-
-      this.broadcastTasks(newTasks);
-      this.sendSocketNotification("TASKS", newTasks);
-
-      res.json(newTasks);
-    });
-
-    // ====================
-    // API: Get tasks
-    // ====================
+    // Get tasks
     this.app.get("/api/tasks", (req, res) => {
       res.json(this.loadTasks());
     });
 
-    // ====================
-    // API: Translations
-    // ====================
+    // Translations
     this.app.get("/api/lang", (req, res) => {
       const lang = req.query.lang || "nl";
       try {
@@ -98,9 +65,9 @@ module.exports = NodeHelper.create({
       }
     });
 
-    // Start server + WebSocket
     const server = this.app.listen(8123, () => console.log("Webinterface draait op poort 8123"));
 
+    // WebSocket server
     this.wss = new WebSocket.Server({ server });
     this.wss.on("connection", ws => {
       this.clients.push(ws);
@@ -112,45 +79,45 @@ module.exports = NodeHelper.create({
     });
   },
 
-  // ====================
-  // WebSocket broadcast
-  // ====================
-  broadcastTasks(tasks) {
-    const message = JSON.stringify({ type: "TASKS", tasks });
+  broadcastTasks(tasksData) {
+    const message = JSON.stringify({ type: "TASKS", tasks: tasksData });
     this.clients.forEach(ws => {
-      if (ws.readyState === WebSocket.OPEN) ws.send(message);
+      if(ws.readyState === WebSocket.OPEN) ws.send(message);
     });
   },
 
   socketNotificationReceived(notification, payload) {
-    if (notification === "GET_TASKS") {
-      const tasks = this.loadTasks();
-      this.sendSocketNotification("TASKS", tasks);
+    if(notification === "GET_TASKS") {
+      const tasksData = this.loadTasks();
+      this.sendSocketNotification("TASKS", tasksData);
     }
-    if (notification === "TOGGLE_TASK") {
-      const tasks = this.loadTasks();
-      const task = tasks.find(t => t.id === payload);
-      if (task) task.done = !task.done;
-      this.saveTasks(tasks);
-      this.sendSocketNotification("TASKS", tasks);
-      this.broadcastTasks(tasks);
+    if(notification === "TOGGLE_TASK") {
+      const tasksData = this.loadTasks();
+      const task = tasksData.tasks.find(t => t.id === payload);
+      if(task) task.done = !task.done;
+      this.saveTasks(tasksData);
+      this.sendSocketNotification("TASKS", tasksData);
+      this.broadcastTasks(tasksData);
     }
   },
 
   loadTasks() {
     try {
-      if (!fs.existsSync(this.tasksFile)) fs.writeFileSync(this.tasksFile, "[]", "utf8");
+      if(!fs.existsSync(this.tasksFile)) {
+        const defaultData = { tasks_title: "Mijn Taken", tasks: [] };
+        fs.writeFileSync(this.tasksFile, JSON.stringify(defaultData, null, 2), "utf8");
+      }
       return JSON.parse(fs.readFileSync(this.tasksFile, "utf8"));
-    } catch (e) {
+    } catch(e) {
       console.error("Fout bij laden tasks.json:", e);
-      return [];
+      return { tasks_title: "Mijn Taken", tasks: [] };
     }
   },
 
-  saveTasks(tasks) {
+  saveTasks(tasksData) {
     try {
-      fs.writeFileSync(this.tasksFile, JSON.stringify(tasks, null, 2), "utf8");
-    } catch (e) {
+      fs.writeFileSync(this.tasksFile, JSON.stringify(tasksData, null, 2), "utf8");
+    } catch(e) {
       console.error("Fout bij opslaan tasks.json:", e);
     }
   }
