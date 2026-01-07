@@ -1,3 +1,5 @@
+Magic Mirror Task List
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -123,4 +125,32 @@ taskForm.addEventListener("submit", async e=>{
   if(ws.readyState === WebSocket.OPEN){
     await fetch("/api/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text})});
     taskText.value="";
-    // UI upda
+    // UI update via WebSocket
+  }
+});
+
+async function toggleTask(id){
+  if(ws.readyState === WebSocket.OPEN){
+    await fetch(`/api/toggle/${id}`, {method:"POST"});
+    // UI update via WebSocket
+  }
+}
+
+async function deleteTask(id){
+  if(ws.readyState === WebSocket.OPEN){
+    await fetch(`/api/delete/${id}`, {method:"POST"});
+    // UI update via WebSocket
+  }
+}
+
+// ===================
+// Init
+// ===================
+async function init(){
+  await loadTranslations();
+}
+init();
+</script>
+
+</body>
+</html>
