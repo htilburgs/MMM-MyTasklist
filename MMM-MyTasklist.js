@@ -2,11 +2,13 @@ Module.register("MMM-MyTasklist", {
   defaults: {
     updateInterval: 300000, // 5 minuten
     showCompleted: true,    // toon voltooide taken
-    maxTasks: null          // null = geen limiet, anders bijv. 5
+    maxTasks: null          // null = geen limiet
   },
 
   start() {
     this.tasks = [];
+    this.lang = "nl";
+    this.translations = {};
     this.sendSocketNotification("GET_TASKS");
 
     // Periodieke update
@@ -19,19 +21,42 @@ Module.register("MMM-MyTasklist", {
     return ["MMM-MyTasklist.css"];
   },
 
+  // ====================
+  // Socket ontvangen
+  // ====================
   socketNotificationReceived(notification, payload) {
     if (notification === "TASKS") {
-      this.tasks = Array.isArray(payload) ? payload : [];
-      this.updateDom();
+      // payload = { tasks: [...], lang: "nl" }
+      this.tasks = Array.isArray(payload.tasks) ? payload.tasks : [];
+      this.lang = payload.lang || "nl";
+
+      // Laad vertalingen
+      this.loadTranslations().then(() => this.updateDom());
     }
   },
 
+  // ====================
+  // Vertalingen laden
+  // ====================
+  async loadTranslations() {
+    try {
+      const res = await fetch(`/modules/MMM-MyTasklist/translations/${this.lang}.json`);
+      this.translations = await res.json();
+    } catch {
+      this.translations = {};
+    }
+  },
+
+  // ====================
+  // DOM genereren
+  // ====================
   getDom() {
     const wrapper = document.createElement("div");
     wrapper.className = "MMM-MyTasklist";
 
     if (!this.tasks.length) {
-      wrapper.innerHTML = this.translate("NO_TASKS") || "Geen taken";
+      const noTasks = this.translations.NO_TASKS || "Geen taken";
+      wrapper.innerHTML = `<em>${noTasks}</em>`;
       return wrapper;
     }
 
@@ -40,7 +65,7 @@ Module.register("MMM-MyTasklist", {
     // Filter op showCompleted
     let visibleTasks = this.tasks.filter(task => this.config.showCompleted || !task.done);
 
-    // Limiteer aantal taken als maxTasks is ingesteld
+    // Limiteer aantal taken
     if (this.config.maxTasks && visibleTasks.length > this.config.maxTasks) {
       visibleTasks = visibleTasks.slice(0, this.config.maxTasks);
     }
@@ -52,6 +77,9 @@ Module.register("MMM-MyTasklist", {
     return wrapper;
   },
 
+  // ====================
+  // Task element maken
+  // ====================
   createTaskElement(task) {
     const li = document.createElement("li");
     li.classList.add("task-item");
