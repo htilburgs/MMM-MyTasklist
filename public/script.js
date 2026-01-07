@@ -1,6 +1,3 @@
-// ===================
-// DOM Elements
-// ===================
 const taskList = document.getElementById("taskList");
 const taskForm = document.getElementById("taskForm");
 const taskText = document.getElementById("taskText");
@@ -8,9 +5,6 @@ const langSelect = document.getElementById("langSelect");
 const addBtn = document.getElementById("addBtn");
 const filterBtns = document.querySelectorAll(".filter-btn");
 
-// ===================
-// State
-// ===================
 let tasks = [];
 let translations = {};
 let lang = navigator.language.startsWith("en") ? "en" :
@@ -19,181 +13,102 @@ let lang = navigator.language.startsWith("en") ? "en" :
 langSelect.value = lang;
 let currentFilter = "all";
 
-// ===================
-// WebSocket Realtime
-// ===================
 const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
-  if (data.type === "TASKS") {
-    tasks = data.tasks;
-    renderTasks();
-  }
+  if(data.type==="TASKS"){ tasks=data.tasks; renderTasks(); }
 };
 
-// ===================
-// Translations
-// ===================
-async function loadTranslations() {
-  try {
-    const res = await fetch(`/api/lang?lang=${lang}`);
-    translations = await res.json();
-  } catch {
-    translations = {};
-  }
+async function loadTranslations(){
+  try{ const res=await fetch(`/api/lang?lang=${lang}`); translations=await res.json(); }catch{ translations={}; }
   applyTranslations();
 }
-
-function applyTranslations() {
-  taskText.placeholder = translations.PLACEHOLDER || "New task...";
-  addBtn.textContent = translations.ADD_BUTTON || "Add";
-  document.querySelectorAll(".delete-btn").forEach(btn => {
-    btn.textContent = translations.DELETE_BUTTON || "Delete";
-  });
+function applyTranslations(){
+  taskText.placeholder = translations.PLACEHOLDER||"New task...";
+  addBtn.textContent = translations.ADD_BUTTON||"Add";
+  document.querySelectorAll(".delete-btn").forEach(btn=>btn.textContent=translations.DELETE_BUTTON||"Delete");
 }
+langSelect.addEventListener("change", async()=>{ lang=langSelect.value; await loadTranslations(); });
 
-langSelect.addEventListener("change", async () => {
-  lang = langSelect.value;
-  await loadTranslations();
-});
+function renderTasks(){
+  taskList.innerHTML="";
+  let filtered = tasks;
+  if(currentFilter==="active") filtered = tasks.filter(t=>!t.done);
+  else if(currentFilter==="done") filtered = tasks.filter(t=>t.done);
 
-// ===================
-// Render Tasks
-// ===================
-function renderTasks() {
-  taskList.innerHTML = "";
+  filtered.forEach(task=>{
+    const li=document.createElement("li");
+    li.dataset.id=task.id;
+    li.classList.toggle("done",task.done);
 
-  let filteredTasks = tasks;
-  if (currentFilter === "active") filteredTasks = tasks.filter(t => !t.done);
-  else if (currentFilter === "done") filteredTasks = tasks.filter(t => t.done);
+    const handle=document.createElement("span");
+    handle.className="drag-handle";
+    handle.textContent="≡";
+    li.appendChild(handle);
 
-  filteredTasks.forEach(task => {
-    const li = document.createElement("li");
-    li.dataset.id = task.id;
-    li.draggable = true;
-    if (task.done) li.classList.add("done");
-
-    // Drag events
-    li.addEventListener("dragstart", dragStart);
-    li.addEventListener("dragover", dragOver);
-    li.addEventListener("dragend", dragEnd);
-
-    // Label + checkbox
-    const label = document.createElement("label");
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = task.done;
-    checkbox.addEventListener("change", () => toggleTask(task.id));
+    const label=document.createElement("label");
+    const checkbox=document.createElement("input");
+    checkbox.type="checkbox";
+    checkbox.checked=task.done;
+    checkbox.addEventListener("change",()=>toggleTask(task.id));
     label.appendChild(checkbox);
     label.appendChild(document.createTextNode(task.text));
-
-    // Delete button
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "delete-btn";
-    deleteBtn.addEventListener("click", () => deleteTask(task.id));
-
     li.appendChild(label);
+
+    const deleteBtn=document.createElement("button");
+    deleteBtn.className="delete-btn";
+    deleteBtn.addEventListener("click",()=>deleteTask(task.id));
     li.appendChild(deleteBtn);
+
+    let dragSrcIndex=null;
+    handle.addEventListener("mousedown",()=>{li.draggable=true;});
+    li.addEventListener("dragstart",()=>{ dragSrcIndex=[...taskList.children].indexOf(li); li.classList.add("dragging"); });
+    li.addEventListener("dragover",e=>{ e.preventDefault(); const dragging=document.querySelector(".dragging"); const after=getDragAfterElement(taskList,e.clientY); if(!after) taskList.appendChild(dragging); else taskList.insertBefore(dragging,after); });
+    li.addEventListener("dragend", async()=>{
+      li.classList.remove("dragging");
+      li.draggable=false;
+      const orderedIds=[...taskList.children].map(li=>Number(li.dataset.id));
+      await fetch("/api/reorder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderedIds})});
+    });
+
     taskList.appendChild(li);
   });
   applyTranslations();
 }
 
-// ===================
-// Task Actions (server-side)
-// ===================
-taskForm.addEventListener("submit", async e => {
-  e.preventDefault();
-  const text = taskText.value.trim();
-  if (!text) return;
+function getDragAfterElement(container,y){
+  const draggable=[...container.querySelectorAll("li:not(.dragging)")];
+  return draggable.reduce((closest,child)=>{
+    const box=child.getBoundingClientRect();
+    const offset=y-box.top-box.height/2;
+    if(offset<0 && offset>closest.offset) return {offset,element:child};
+    else return closest;
+  },{offset:Number.NEGATIVE_INFINITY}).element;
+}
 
-  await fetch("/api/tasks", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text })
-  });
-  taskText.value = "";
-  // UI update via WebSocket
+taskForm.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const text=taskText.value.trim();
+  if(!text) return;
+  await fetch("/api/tasks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
+  taskText.value="";
 });
 
-async function toggleTask(id) {
-  await fetch(`/api/toggle/${id}`, { method: "POST" });
-  // UI update via WebSocket
-}
+async function toggleTask(id){ await fetch(`/api/toggle/${id}`,{method:"POST"}); }
+async function deleteTask(id){ await fetch(`/api/delete/${id}`,{method:"POST"}); }
 
-async function deleteTask(id) {
-  await fetch(`/api/delete/${id}`, { method: "POST" });
-  // UI update via WebSocket
-}
-
-// ===================
-// Drag & Drop (server-synced)
-// ===================
-let dragSrcIndex = null;
-
-function dragStart(e) {
-  dragSrcIndex = [...taskList.children].indexOf(this);
-  this.classList.add("dragging");
-}
-
-function dragOver(e) {
-  e.preventDefault();
-  const dragging = document.querySelector(".dragging");
-  const afterElement = getDragAfterElement(taskList, e.clientY);
-  if (afterElement == null) {
-    taskList.appendChild(dragging);
-  } else {
-    taskList.insertBefore(dragging, afterElement);
-  }
-}
-
-async function dragEnd() {
-  this.classList.remove("dragging");
-
-  const orderedIds = [...taskList.children].map(li => Number(li.dataset.id));
-
-  await fetch("/api/reorder", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ orderedIds })
-  });
-}
-
-function getDragAfterElement(container, y) {
-  const draggableElements = [...container.querySelectorAll("li:not(.dragging)")];
-
-  return draggableElements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) {
-      return { offset, element: child };
-    } else {
-      return closest;
-    }
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-// ===================
-// Filters
-// ===================
-filterBtns.forEach(btn => {
-  btn.addEventListener("click", () => {
-    filterBtns.forEach(b => b.classList.remove("active"));
+filterBtns.forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    filterBtns.forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
-    currentFilter = btn.dataset.filter;
+    currentFilter=btn.dataset.filter;
     renderTasks();
   });
 });
 
-// ===================
-// Init
-// ===================
-async function init() {
+async function init(){
   await loadTranslations();
-  try {
-    const res = await fetch("/api/tasks");
-    tasks = await res.json();
-  } catch { tasks = []; }
+  try{ const res=await fetch("/api/tasks"); tasks=await res.json(); }catch{ tasks=[]; }
   renderTasks();
 }
 init();
