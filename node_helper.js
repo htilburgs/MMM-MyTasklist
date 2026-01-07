@@ -24,27 +24,19 @@ module.exports = NodeHelper.create({
 
     const updateTasks = (tasksData, res) => {
       this.saveTasks(tasksData);
-
-      // Mirror krijgt alleen array
-      this.sendSocketNotification("TASKS", tasksData.tasks);
-
-      // index.html krijgt object
-      broadcastTasks(tasksData);
-
+      this.sendSocketNotification("TASKS", tasksData.tasks); // array voor Mirror
+      broadcastTasks(tasksData); // object voor index.html
       if(res) res.json(tasksData);
     };
 
-    // Add task
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if(!text) return res.status(400).send("Geen tekst opgegeven");
-
       const tasksData = this.loadTasks();
       tasksData.tasks.push({ id: Date.now(), text, done: false });
       updateTasks(tasksData, res);
     });
 
-    // Toggle task
     this.app.post("/api/toggle/:id", (req, res) => {
       const tasksData = this.loadTasks();
       const task = tasksData.tasks.find(t => t.id == req.params.id);
@@ -52,17 +44,14 @@ module.exports = NodeHelper.create({
       updateTasks(tasksData, res);
     });
 
-    // Delete task
     this.app.post("/api/delete/:id", (req, res) => {
       const tasksData = this.loadTasks();
       tasksData.tasks = tasksData.tasks.filter(t => t.id != req.params.id);
       updateTasks(tasksData, res);
     });
 
-    // Get tasks
     this.app.get("/api/tasks", (req, res) => res.json(this.loadTasks()));
 
-    // Translations
     this.app.get("/api/lang", (req, res) => {
       const lang = req.query.lang || "nl";
       try { res.json(require(path.join(__dirname, "translations", `${lang}.json`))); }
@@ -94,7 +83,6 @@ module.exports = NodeHelper.create({
   socketNotificationReceived(notification, payload) {
     const tasksData = this.loadTasks();
     if(notification === "GET_TASKS") {
-      // Mirror-module krijgt array
       this.sendSocketNotification("TASKS", tasksData.tasks);
     }
     if(notification === "TOGGLE_TASK") {
