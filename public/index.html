@@ -84,11 +84,16 @@
       } catch {
         translations = {};
       }
-      // toepassen
+      applyTranslations();
+    }
+
+    function applyTranslations() {
+      // Titel, placeholder en add-knop
       titleElem.textContent = translations.TASKS_TITLE || "MyTasklist";
       taskText.placeholder = translations.PLACEHOLDER || "New task...";
       addBtn.textContent = translations.ADD_BUTTON || "Add";
 
+      // Delete-knoppen
       document.querySelectorAll(".delete-btn").forEach(btn => {
         btn.textContent = translations.DELETE_BUTTON || "Delete";
       });
@@ -97,7 +102,7 @@
     langSelect.addEventListener("change", async () => {
       lang = langSelect.value;
       await loadTranslations();
-      await loadTasks(); // opnieuw renderen met juiste labels
+      await loadTasks(); // render opnieuw met juiste labels
     });
 
     // =========================
@@ -107,13 +112,14 @@
       try {
         const res = await fetch("/api/tasks");
         tasks = await res.json();
-      } catch { tasks = []; }
+      } catch {
+        tasks = [];
+      }
       renderTasks();
     }
 
     function renderTasks() {
       taskList.innerHTML = "";
-      const deleteLabel = translations.DELETE_BUTTON || "Delete";
 
       tasks.forEach(task => {
         const li = document.createElement("li");
@@ -131,7 +137,6 @@
 
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
-        deleteBtn.textContent = deleteLabel;
         deleteBtn.addEventListener("click", () => deleteTask(task.id));
 
         li.appendChild(label);
@@ -141,6 +146,8 @@
         li.addEventListener("dragstart", () => li.classList.add("dragging"));
         li.addEventListener("dragend", () => { li.classList.remove("dragging"); saveOrder(); });
       });
+
+      applyTranslations(); // pas labels nu correct toe
     }
 
     // =========================
@@ -181,7 +188,11 @@
       e.preventDefault();
       const text = taskText.value.trim();
       if (!text) return;
-      await fetch("/api/tasks", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ text }) });
+      await fetch("/api/tasks", { 
+        method: "POST", 
+        headers: {"Content-Type":"application/json"}, 
+        body: JSON.stringify({ text }) 
+      });
       taskText.value = "";
       await loadTasks();
     });
