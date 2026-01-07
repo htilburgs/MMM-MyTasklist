@@ -6,22 +6,19 @@ module.exports = NodeHelper.create({
 
   start() {
     this.tasksFile = null;
-    console.log("MMM-MyTasklist node_helper gestart");
+    this.fileWatcher = null;
+    console.log("MMM-MyTasklist helper gestart");
   },
-
-  /* =========================
-     SOCKET COMMUNICATIE
-  ========================= */
 
   socketNotificationReceived(notification, payload) {
 
-    // Initialisatie: ontvang pad naar JSON-bestand
+    // Init: ontvang bestandspad
     if (notification === "INIT") {
       this.tasksFile = path.isAbsolute(payload)
         ? payload
         : path.join(__dirname, payload);
-
       this.ensureTasksFile();
+      this.startFileWatcher();
       return;
     }
 
@@ -35,6 +32,26 @@ module.exports = NodeHelper.create({
       const tasks = this.toggleTask(payload);
       this.saveTasks(tasks);
       this.sendSocketNotification("TASKS", tasks);
+    }
+  },
+
+  /* =========================
+     FILE WATCHER
+  ========================= */
+
+  startFileWatcher() {
+    if (this.fileWatcher) return;
+
+    try {
+      this.fileWatcher = fs.watch(this.tasksFile, (eventType) => {
+        if (eventType === "change") {
+          const tasks = this.loadTasks();
+          this.sendSocketNotification("TASKS", tasks);
+        }
+      });
+      console.log("MMM-MyTasklist: live reload watcher gestart");
+    } catch (e) {
+      console.error("MMM-MyTasklist: fout bij starten file watcher", e);
     }
   },
 
@@ -77,11 +94,7 @@ module.exports = NodeHelper.create({
     id = Number(id);
     const tasks = this.loadTasks();
     const task = tasks.find(t => t.id === id);
-
-    if (task) {
-      task.done = !task.done;
-    }
-
+    if (task) task.done = !task.done;
     return tasks;
   }
 
