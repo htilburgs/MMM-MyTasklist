@@ -1,5 +1,10 @@
 {
   "NO_TASKS": "Geen taken",
-  "ADD_TASK": "Toevoegen",
-  "PLACEHOLDER": "Nieuwe taak..."
+  "TASKS_TITLE": "Mijn Takenlijst",
+  "PLACEHOLDER": "Nieuwe taak...",
+  "ADD_BUTTON": "Toevoegen",
+  "DELETE_BUTTON": "Verwijderen",
+  "FILTER_ALL": "Alle",
+  "FILTER_ACTIVE": "Actief",
+  "FILTER_DONE": "Gereed"
 }
