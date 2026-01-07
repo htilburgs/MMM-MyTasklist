@@ -6,6 +6,7 @@
 <title>MyTasklist Webinterface</title>
 <style>
 body { font-family: Arial; max-width:700px; margin:20px auto; background:#f0f0f0; padding:0 10px; }
+#tasksTitle { text-align:center; margin-bottom:10px; font-size:1.5rem; }
 #langSelect { display:block; margin:0 auto 20px; padding:6px 12px; font-size:1rem; }
 form { display:flex; margin-bottom:20px; }
 input[type=text] { flex:1; padding:10px; font-size:1rem; border:1px solid #ccc; border-radius:5px 0 0 5px; }
@@ -22,16 +23,18 @@ input[type=checkbox] { margin-right:10px; transform:scale(1.3); cursor:pointer; 
 </head>
 <body>
 
+<h2 id="tasksTitle">Mijn Taken</h2>
+
 <select id="langSelect">
-<option value="nl">Nederlands</option>
-<option value="en">English</option>
-<option value="de">Deutsch</option>
-<option value="fr">Français</option>
+  <option value="nl">Nederlands</option>
+  <option value="en">English</option>
+  <option value="de">Deutsch</option>
+  <option value="fr">Français</option>
 </select>
 
 <form id="taskForm">
-<input type="text" id="taskText" placeholder="Nieuwe taak..." required>
-<button type="submit" id="addBtn">Toevoegen</button>
+  <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
+  <button type="submit" id="addBtn">Toevoegen</button>
 </form>
 
 <ul id="taskList"></ul>
@@ -40,6 +43,7 @@ input[type=checkbox] { margin-right:10px; transform:scale(1.3); cursor:pointer; 
 const taskList = document.getElementById("taskList");
 const taskForm = document.getElementById("taskForm");
 const taskText = document.getElementById("taskText");
+const tasksTitle = document.getElementById("tasksTitle");
 const langSelect = document.getElementById("langSelect");
 const addBtn = document.getElementById("addBtn");
 
@@ -48,15 +52,13 @@ let translations = {};
 let lang = navigator.language.startsWith("en")?"en":navigator.language.startsWith("de")?"de":navigator.language.startsWith("fr")?"fr":"nl";
 langSelect.value = lang;
 
-// ===================
 // WebSocket realtime
-// ===================
 const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){
-    tasks = data.tasks;
-    renderTasks();
+    tasks = data.tasks.tasks; // taken array
+    renderTasks(tasks);
   }
 };
 
@@ -72,6 +74,10 @@ async function loadTranslations(){
 }
 
 function applyTranslations(){
+  // Titel boven taalselector
+  tasksTitle.textContent = translations.TASKS_TITLE || "Mijn Taken";
+
+  // Placeholder & knoppen
   taskText.placeholder = translations.PLACEHOLDER || "New task...";
   addBtn.textContent = translations.ADD_BUTTON || "Add";
   document.querySelectorAll(".delete-btn").forEach(btn=>{
@@ -87,9 +93,9 @@ langSelect.addEventListener("change", async ()=>{
 // ===================
 // Render tasks
 // ===================
-function renderTasks(){
+function renderTasks(taskArray){
   taskList.innerHTML="";
-  tasks.forEach(task=>{
+  (taskArray || []).forEach(task=>{
     const li = document.createElement("li");
     li.dataset.id = task.id;
     if(task.done) li.classList.add("done");
@@ -120,30 +126,25 @@ taskForm.addEventListener("submit", async e=>{
   e.preventDefault();
   const text = taskText.value.trim();
   if(!text) return;
-  if(ws.readyState === WebSocket.OPEN){
+  if(ws.readyState===WebSocket.OPEN){
     await fetch("/api/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text})});
     taskText.value="";
-    // UI update via WebSocket
   }
 });
 
 async function toggleTask(id){
-  if(ws.readyState === WebSocket.OPEN){
+  if(ws.readyState===WebSocket.OPEN){
     await fetch(`/api/toggle/${id}`, {method:"POST"});
-    // UI update via WebSocket
   }
 }
 
 async function deleteTask(id){
-  if(ws.readyState === WebSocket.OPEN){
+  if(ws.readyState===WebSocket.OPEN){
     await fetch(`/api/delete/${id}`, {method:"POST"});
-    // UI update via WebSocket
   }
 }
 
-// ===================
 // Init
-// ===================
 async function init(){
   await loadTranslations();
 }
