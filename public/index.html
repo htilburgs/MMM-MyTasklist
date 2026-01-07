@@ -9,132 +9,19 @@
 <body>
 
 <select id="langSelect">
-<option value="nl">Nederlands</option>
-<option value="en">English</option>
-<option value="de">Deutsch</option>
-<option value="fr">Français</option>
+  <option value="nl">Nederlands</option>
+  <option value="en">English</option>
+  <option value="de">Deutsch</option>
+  <option value="fr">Français</option>
 </select>
 
 <form id="taskForm">
-<input type="text" id="taskText" placeholder="Nieuwe taak..." required>
-<button type="submit" id="addBtn">Toevoegen</button>
+  <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
+  <button type="submit" id="addBtn">Toevoegen</button>
 </form>
 
 <ul id="taskList"></ul>
 
-<script>
-const taskList = document.getElementById("taskList");
-const taskForm = document.getElementById("taskForm");
-const taskText = document.getElementById("taskText");
-const langSelect = document.getElementById("langSelect");
-const addBtn = document.getElementById("addBtn");
-
-let tasks = [];
-let translations = {};
-let lang = navigator.language.startsWith("en")?"en":navigator.language.startsWith("de")?"de":navigator.language.startsWith("fr")?"fr":"nl";
-langSelect.value = lang;
-
-// ===================
-// WebSocket realtime
-// ===================
-const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
-ws.onmessage = event => {
-  const data = JSON.parse(event.data);
-  if(data.type==="TASKS"){
-    tasks = data.tasks;
-    renderTasks();
-  }
-};
-
-// ===================
-// Translations
-// ===================
-async function loadTranslations(){
-  try{
-    const res = await fetch(`/api/lang?lang=${lang}`);
-    translations = await res.json();
-  }catch{ translations={}; }
-  applyTranslations();
-}
-
-function applyTranslations(){
-  taskText.placeholder = translations.PLACEHOLDER || "New task...";
-  addBtn.textContent = translations.ADD_BUTTON || "Add";
-  document.querySelectorAll(".delete-btn").forEach(btn=>{
-    btn.textContent = translations.DELETE_BUTTON || "Delete";
-  });
-}
-
-langSelect.addEventListener("change", async ()=>{
-  lang = langSelect.value;
-  await loadTranslations();
-});
-
-// ===================
-// Render tasks
-// ===================
-function renderTasks(){
-  taskList.innerHTML="";
-  tasks.forEach(task=>{
-    const li = document.createElement("li");
-    li.dataset.id = task.id;
-    if(task.done) li.classList.add("done");
-
-    const label = document.createElement("label");
-    const checkbox = document.createElement("input");
-    checkbox.type="checkbox";
-    checkbox.checked=task.done;
-    checkbox.addEventListener("change", async ()=>{ await toggleTask(task.id); });
-    label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(task.text));
-
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className="delete-btn";
-    deleteBtn.addEventListener("click", async ()=>{ await deleteTask(task.id); });
-
-    li.appendChild(label);
-    li.appendChild(deleteBtn);
-    taskList.appendChild(li);
-  });
-  applyTranslations();
-}
-
-// ===================
-// Add / Toggle / Delete
-// ===================
-taskForm.addEventListener("submit", async e=>{
-  e.preventDefault();
-  const text = taskText.value.trim();
-  if(!text) return;
-  if(ws.readyState === WebSocket.OPEN){
-    await fetch("/api/tasks", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text})});
-    taskText.value="";
-    // UI update via WebSocket
-  }
-});
-
-async function toggleTask(id){
-  if(ws.readyState === WebSocket.OPEN){
-    await fetch(`/api/toggle/${id}`, {method:"POST"});
-    // UI update via WebSocket
-  }
-}
-
-async function deleteTask(id){
-  if(ws.readyState === WebSocket.OPEN){
-    await fetch(`/api/delete/${id}`, {method:"POST"});
-    // UI update via WebSocket
-  }
-}
-
-// ===================
-// Init
-// ===================
-async function init(){
-  await loadTranslations();
-}
-init();
-</script>
-
+<script src="script.js"></script>
 </body>
 </html>
