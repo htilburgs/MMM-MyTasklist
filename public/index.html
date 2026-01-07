@@ -8,24 +8,29 @@
 </head>
 <body>
 
-<select id="langSelect">
-  <option value="nl">Nederlands</option>
-  <option value="en">English</option>
-  <option value="de">Deutsch</option>
-  <option value="fr">Français</option>
-</select>
+<!-- Top bar: taal + filters naast elkaar -->
+<div class="top-bar">
+  <select id="langSelect">
+    <option value="nl">Nederlands</option>
+    <option value="en">English</option>
+    <option value="de">Deutsch</option>
+    <option value="fr">Français</option>
+  </select>
 
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">Alle</button>
+    <button class="filter-btn" data-filter="active">Actief</button>
+    <button class="filter-btn" data-filter="done">Gereed</button>
+  </div>
+</div>
+
+<!-- Formulier om nieuwe taken toe te voegen -->
 <form id="taskForm">
   <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
   <button type="submit" id="addBtn">Toevoegen</button>
 </form>
 
-<div class="filters">
-  <button class="filter-btn active" data-filter="all">Alle</button>
-  <button class="filter-btn" data-filter="active">Actief</button>
-  <button class="filter-btn" data-filter="done">Gereed</button>
-</div>
-
+<!-- Taaklijst -->
 <ul id="taskList"></ul>
 
 <script src="script.js"></script>
