@@ -25,7 +25,9 @@ Module.register("MMM-MyTasklist", {
   getTranslations() {
     return {
       nl: "translations/nl.json",
-      en: "translations/en.json"
+      en: "translations/en.json",
+      de: "translations/de.json",
+      fr: "translations/fr.json"
     };
   },
 
