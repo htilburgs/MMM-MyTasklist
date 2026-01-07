@@ -24,20 +24,14 @@ module.exports = NodeHelper.create({
 
     const updateTasks = (tasksData, res) => {
       this.saveTasks(tasksData);
-
-      // Mirror krijgt array
       this.sendSocketNotification("TASKS", tasksData.tasks);
-
-      // index.html krijgt object
       broadcastTasks(tasksData);
-
       if(res) res.json(tasksData);
     };
 
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
       if(!text) return res.status(400).send("Geen tekst opgegeven");
-
       const tasksData = this.loadTasks();
       tasksData.tasks.push({ id: Date.now(), text, done: false });
       updateTasks(tasksData, res);
