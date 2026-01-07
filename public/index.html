@@ -8,12 +8,20 @@
 </head>
 <body>
 
-<select id="langSelect">
-  <option value="nl">Nederlands</option>
-  <option value="en">English</option>
-  <option value="de">Deutsch</option>
-  <option value="fr">Français</option>
-</select>
+<div class="controls">
+  <select id="langSelect">
+    <option value="nl">Nederlands</option>
+    <option value="en">English</option>
+    <option value="de">Deutsch</option>
+    <option value="fr">Français</option>
+  </select>
+
+  <div class="filters">
+    <button data-filter="all" class="filter-btn active">Alle</button>
+    <button data-filter="active" class="filter-btn">Actief</button>
+    <button data-filter="done" class="filter-btn">Voltooid</button>
+  </div>
+</div>
 
 <form id="taskForm">
   <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
