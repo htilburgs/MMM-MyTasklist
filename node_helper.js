@@ -7,7 +7,7 @@ const WebSocket = require("ws");
 module.exports = NodeHelper.create({
   start() {
     this.tasksFile = path.join(__dirname, "tasks.json");
-    this.clients = []; // webinterface clients
+    this.clients = []; // Webinterface clients
     this.setupServer();
     console.log("MMM-MyTasklist helper gestart");
   },
@@ -17,25 +17,23 @@ module.exports = NodeHelper.create({
     this.app.use(express.json());
     this.app.use(express.static(path.join(__dirname, "public")));
 
-    // ===== Add task =====
+    // ===== Toevoegen =====
     this.app.post("/api/tasks", (req, res) => {
       const { text } = req.body;
-      if (!text) return res.status(400).send("Geen tekst opgegeven");
+      if (!text || !text.trim()) return res.status(400).send("Geen tekst opgegeven");
 
       const data = this.loadTasks();
       const tasks = data.tasks || [];
-      tasks.push({ id: Date.now(), text, done: false });
+      tasks.push({ id: Date.now(), text: text.trim(), done: false });
 
       this.saveTasks(tasks, data.lang);
-
-      // Update MagicMirror + webinterface
-      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
       this.broadcastTasks(tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
 
       res.json({ tasks, lang: data.lang });
     });
 
-    // ===== Toggle task =====
+    // ===== Toggle done =====
     this.app.post("/api/toggle/:id", (req, res) => {
       const data = this.loadTasks();
       const tasks = data.tasks || [];
@@ -43,29 +41,44 @@ module.exports = NodeHelper.create({
       if (task) task.done = !task.done;
 
       this.saveTasks(tasks, data.lang);
-
-      // Realtime update
-      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
       this.broadcastTasks(tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
 
       res.json({ tasks, lang: data.lang });
     });
 
-    // ===== Delete task =====
+    // ===== Delete =====
     this.app.post("/api/delete/:id", (req, res) => {
       const data = this.loadTasks();
-      let tasks = data.tasks || [];
-      tasks = tasks.filter(t => t.id != req.params.id);
+      const tasks = (data.tasks || []).filter(t => t.id != req.params.id);
 
       this.saveTasks(tasks, data.lang);
-
-      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
       this.broadcastTasks(tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
 
       res.json({ tasks, lang: data.lang });
     });
 
-    // ===== Reorder tasks =====
+    // ===== Edit =====
+    this.app.post("/api/edit/:id", (req, res) => {
+      const { text } = req.body;
+      if (!text || !text.trim()) return res.status(400).send("Geen tekst opgegeven");
+
+      const data = this.loadTasks();
+      const tasks = data.tasks || [];
+      const task = tasks.find(t => t.id == req.params.id);
+      if (!task) return res.status(404).send("Taak niet gevonden");
+
+      task.text = text.trim();
+
+      this.saveTasks(tasks, data.lang);
+      this.broadcastTasks(tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
+
+      res.json({ tasks, lang: data.lang });
+    });
+
+    // ===== Reorder =====
     this.app.post("/api/reorder", (req, res) => {
       const { orderedIds } = req.body;
       if (!Array.isArray(orderedIds)) return res.status(400).send("Invalid array");
@@ -75,9 +88,8 @@ module.exports = NodeHelper.create({
       const newTasks = orderedIds.map(id => tasks.find(t => t.id == id)).filter(Boolean);
 
       this.saveTasks(newTasks, data.lang);
-
-      this.sendSocketNotification("TASKS", { tasks: newTasks, lang: data.lang });
       this.broadcastTasks(newTasks);
+      this.sendSocketNotification("TASKS", { tasks: newTasks, lang: data.lang });
 
       res.json({ tasks: newTasks, lang: data.lang });
     });
@@ -95,18 +107,11 @@ module.exports = NodeHelper.create({
 
       const data = this.loadTasks();
       this.saveTasks(data.tasks, lang);
-
       res.json({ success: true, lang });
     });
 
-    // ===== Get translations / last language =====
+    // ===== Get translations =====
     this.app.get("/api/lang", (req, res) => {
-      const getLangOnly = req.query.getLang === "true";
-      if (getLangOnly) {
-        const data = this.loadTasks();
-        return res.json({ lang: data.lang || "nl" });
-      }
-
       const lang = req.query.lang || "nl";
       try {
         const translations = require(path.join(__dirname, "translations", `${lang}.json`));
@@ -118,8 +123,8 @@ module.exports = NodeHelper.create({
 
     // ===== Start server + WebSocket =====
     const server = this.app.listen(8448, () => console.log("Webinterface draait op poort 8448"));
-
     this.wss = new WebSocket.Server({ server });
+
     this.wss.on("connection", ws => {
       this.clients.push(ws);
       const data = this.loadTasks();
@@ -129,7 +134,7 @@ module.exports = NodeHelper.create({
     });
   },
 
-  // ===== Broadcast naar webinterface =====
+  // ===== WebSocket broadcast =====
   broadcastTasks(tasks) {
     const message = JSON.stringify({ type: "TASKS", tasks });
     this.clients.forEach(ws => {
@@ -139,22 +144,21 @@ module.exports = NodeHelper.create({
 
   // ===== MagicMirror socket =====
   socketNotificationReceived(notification, payload) {
-    if (notification === "GET_TASKS") {
-      const data = this.loadTasks();
-      this.sendSocketNotification("TASKS", { tasks: data.tasks || [], lang: data.lang || "nl" });
-    }
+    const data = this.loadTasks();
+    const tasks = data.tasks || [];
 
-    if (notification === "TOGGLE_TASK") {
-      const data = this.loadTasks();
-      const tasks = data.tasks || [];
-      const task = tasks.find(t => t.id === payload);
-      if (task) task.done = !task.done;
+    switch (notification) {
+      case "GET_TASKS":
+        this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
+        break;
 
-      this.saveTasks(tasks, data.lang);
-
-      // Realtime update naar MM + webinterface
-      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
-      this.broadcastTasks(tasks);
+      case "TOGGLE_TASK":
+        const task = tasks.find(t => t.id == payload);
+        if (task) task.done = !task.done;
+        this.saveTasks(tasks, data.lang);
+        this.broadcastTasks(tasks);
+        this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
+        break;
     }
   },
 
