@@ -2,6 +2,7 @@
   "NO_TASKS": "No tasks",
   "TASKS_TITLE": "My Tasklist",
   "PLACEHOLDER": "New task...",
+   "EDIT_BUTTON": "Edit",
   "ADD_BUTTON": "Add",
   "DELETE_BUTTON": "Delete",
   "FILTER_ALL": "All",
