@@ -117,7 +117,7 @@ module.exports = NodeHelper.create({
     });
 
     // ===== Start server + WebSocket =====
-    const server = this.app.listen(8123, () => console.log("Webinterface draait op poort 8123"));
+    const server = this.app.listen(8448, () => console.log("Webinterface draait op poort 8448"));
 
     this.wss = new WebSocket.Server({ server });
     this.wss.on("connection", ws => {
