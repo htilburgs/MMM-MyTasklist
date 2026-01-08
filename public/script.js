@@ -1,13 +1,16 @@
+// ===== Elementen =====
 const taskList = document.getElementById("taskList");
 const taskForm = document.getElementById("taskForm");
 const taskText = document.getElementById("taskText");
 const addBtn = document.getElementById("addBtn");
 const filterBtns = document.querySelectorAll(".filter-btn");
+const langSelect = document.getElementById("langSelect");
 
 let tasks = [];
 let currentFilter = "all";
+let lang = "nl";
 
-// WebSocket voor realtime updates
+// ===== WebSocket voor realtime updates =====
 const ws = new WebSocket(`ws://${window.location.hostname}:8448`);
 ws.onmessage = e => {
   const data = JSON.parse(e.data);
@@ -17,9 +20,10 @@ ws.onmessage = e => {
   }
 };
 
-// Render takenlijst
+// ===== Functie om taken te renderen =====
 function renderTasks() {
   taskList.innerHTML = "";
+
   let filtered = tasks;
   if (currentFilter === "active") filtered = tasks.filter(t => !t.done);
   else if (currentFilter === "done") filtered = tasks.filter(t => t.done);
@@ -89,7 +93,7 @@ function renderTasks() {
   });
 }
 
-// Drag helper
+// ===== Drag helper =====
 function getDragAfterElement(container, y) {
   const draggable = [...container.querySelectorAll("li:not(.dragging)")];
   return draggable.reduce((closest, child) => {
@@ -100,7 +104,7 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-// Voeg taak toe
+// ===== CRUD acties =====
 taskForm.addEventListener("submit", async e => {
   e.preventDefault();
   const text = taskText.value.trim();
@@ -113,13 +117,10 @@ taskForm.addEventListener("submit", async e => {
   taskText.value = "";
 });
 
-// Toggle taak done
 async function toggleTask(id) { await fetch(`/api/toggle/${id}`, { method: "POST" }); }
-
-// Verwijder taak
 async function deleteTask(id) { await fetch(`/api/delete/${id}`, { method: "POST" }); }
 
-// Inline taak bewerken
+// ===== Inline edit =====
 async function editTask(id, textSpan) {
   const originalText = textSpan.textContent;
   const input = document.createElement("input");
@@ -150,7 +151,7 @@ async function editTask(id, textSpan) {
   });
 }
 
-// Filter buttons
+// ===== Filters =====
 filterBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     filterBtns.forEach(b => b.classList.remove("active"));
@@ -160,14 +161,57 @@ filterBtns.forEach(btn => {
   });
 });
 
-// Init
-(async function init() {
+// ===== Taal selector =====
+async function loadTranslations() {
+  try {
+    const res = await fetch(`/api/lang?lang=${lang}`);
+    const translations = await res.json();
+
+    taskText.placeholder = translations.PLACEHOLDER || "New task...";
+    addBtn.textContent = translations.ADD_BUTTON || "Add";
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.textContent = translations.DELETE_BUTTON || "Delete";
+    });
+    document.querySelectorAll(".edit-btn").forEach(btn => {
+      btn.textContent = translations.EDIT_BUTTON || "Edit";
+    });
+
+    document.querySelector('.filter-btn[data-filter="all"]').textContent = translations.FILTER_ALL || "All";
+    document.querySelector('.filter-btn[data-filter="active"]').textContent = translations.FILTER_ACTIVE || "Active";
+    document.querySelector('.filter-btn[data-filter="done"]').textContent = translations.FILTER_DONE || "Done";
+  } catch (e) { console.error(e); }
+}
+
+langSelect.addEventListener("change", async () => {
+  lang = langSelect.value;
+  try {
+    await fetch("/api/lang", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lang })
+    });
+  } catch(e) { console.error(e); }
+  await loadTranslations();
+});
+
+// Init: haal huidige taal op
+(async function initLanguage() {
+  try {
+    const res = await fetch("/api/lang?getLang=true");
+    const data = await res.json();
+    lang = data.lang || "nl";
+    langSelect.value = lang;
+    await loadTranslations();
+  } catch {}
+})();
+
+// ===== Init taken =====
+(async function initTasks() {
   try {
     const res = await fetch("/api/tasks");
     const data = await res.json();
     tasks = data.tasks || [];
-  } catch {
-    tasks = [];
-  }
+  } catch { tasks = []; }
   renderTasks();
 })();
