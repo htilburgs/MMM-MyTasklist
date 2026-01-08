@@ -65,3 +65,6 @@ All the updates are instantly published on your Mirror
 NOTE: </br>
 With a touchscreen you're able to check the checkboxes on the Mirror to complete the task. </br>
 All these changes are instantly published to the Webinterface
+
+## Versions
+v0.1 - Initial version
