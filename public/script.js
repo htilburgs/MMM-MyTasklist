@@ -11,7 +11,7 @@ let translations = {};
 let lang = "nl";
 let currentFilter = "all";
 
-const ws = new WebSocket(`ws://${window.location.hostname}:8123`);
+const ws = new WebSocket(`ws://${window.location.hostname}:8448`);
 ws.onmessage = event => {
   const data = JSON.parse(event.data);
   if(data.type==="TASKS"){ tasks=data.tasks; renderTasks(); }
