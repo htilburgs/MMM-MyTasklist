@@ -67,7 +67,8 @@ With a touchscreen you're able to check the checkboxes on the Mirror to complete
 All these changes are instantly published to the Webinterface
 
 ## Versions
-v1.0.0  - Initial release
-v1.1.0  - Update Look & Feel
-v1.2.0  - Add possibility to edit the tasks in the Webinterface
+v1.0.0  - Initial release </br>
+v1.1.0  - Update Look & Feel </br>
+v1.1.1  - Change Webinterface port from 8123 to 8448 </br>
+v1.2.0  - Add possibility to edit the tasks in the Webinterface </br>
 
