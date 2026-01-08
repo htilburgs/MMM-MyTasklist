@@ -4,7 +4,8 @@ This displays a simple Tasklist, you can update through a web frontend.
 
 <img width="319" height="202" alt="image" src="https://github.com/user-attachments/assets/e76f7664-4f41-49d2-b4f6-5a76922591c0" />
 </br></br>
-<img width="734" height="380" alt="image" src="https://github.com/user-attachments/assets/dd298d42-a51d-4ee2-9d2a-40d49dc88054" />
+<img width="721" height="370" alt="image" src="https://github.com/user-attachments/assets/10c2eff4-4286-461f-8333-f0ae098d36c7" />
+
 
 ## Installation
 Clone this repository in your modules folder, and install dependencies:
@@ -47,18 +48,21 @@ Open a browser and type ```http://serverip address:8448``` </br>
 So if for example you're MagicMirror is on 192.168.0.48 then you go to ```http://192.168.0.48:8448``` </br>
 The Webinterface for MyTasklist will be loaded and you will be able to:
 
-<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/bc0a97df-229b-423f-990c-a849dea7aaa2" />
+<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/15a6e857-90fe-43d0-bc5a-22231cea98bd" />
 choose language for the Webinterface</br>
-<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/05770bf9-8c33-4d21-a86e-c7c09dad5d39" />
+<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/15a6e857-90fe-43d0-bc5a-22231cea98bd" />
 add tasks</br>
-<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/cdbd7491-fbbc-4190-a97b-19bbd0e6844d" />
+<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/15a6e857-90fe-43d0-bc5a-22231cea98bd" />
 complete tasks</br>
-<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/5999ddae-a767-4500-a03c-14363cc10723" />
+<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/15a6e857-90fe-43d0-bc5a-22231cea98bd" />
 delete tasks</br>
-<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/6a13b4c2-9d9d-461e-8be8-2042cc0f1da8" />
+<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/15a6e857-90fe-43d0-bc5a-22231cea98bd" />
+edit tasks</br>
+<img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/15a6e857-90fe-43d0-bc5a-22231cea98bd" />
 move the order from tasks by drag-and-drop</br>
 <img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/15a6e857-90fe-43d0-bc5a-22231cea98bd" />
 filter on all, active or done tasks</br>
+
 </br>
 All the updates are instantly published on your Mirror
 </br></br>
