@@ -36,10 +36,10 @@ Add the module to your modules array in your config.js.
   header: "MyTaskList",
   disabled: false,
   config: {
-    tasksFile: "modules/MMM-MyTasklist/tasks.json",
-    updateInterval: 300000,
-    showCompleted: true,
-    maxTasks: null
+    tasksFile: "modules/MMM-MyTasklist/tasks.json",  // Taskfile to use
+    updateInterval: 300000,                          // Update every 5 minutes
+    showCompleted: true,                             // Show completed tasks -> true / false
+    maxTasks: null                                   // Maximum tasks to show -> null = all or use number
   }
 },
 ```
