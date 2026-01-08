@@ -43,8 +43,8 @@ Add the module to your modules array in your config.js.
 },
 ```
 ## Load Webinterface for updating the Tasklist
-Open a browser and type ```http://serverip address:8123``` </br>
-So if for example you're MagicMirror is on 192.168.0.48 then you go to ```http://192.168.0.48:8123``` </br>
+Open a browser and type ```http://serverip address:8448``` </br>
+So if for example you're MagicMirror is on 192.168.0.48 then you go to ```http://192.168.0.48:8448``` </br>
 The Webinterface for MyTasklist will be loaded and you will be able to:
 
 <img width="22" height="22" alt="image" src="https://github.com/user-attachments/assets/bc0a97df-229b-423f-990c-a849dea7aaa2" />
