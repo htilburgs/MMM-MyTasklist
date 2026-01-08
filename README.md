@@ -67,4 +67,7 @@ With a touchscreen you're able to check the checkboxes on the Mirror to complete
 All these changes are instantly published to the Webinterface
 
 ## Versions
-v0.1 - Initial version
+v1.0.0  - Initial release
+v1.1.0  - Update Look & Feel
+v1.2.0  - Add possibility to edit the tasks in the Webinterface
+
