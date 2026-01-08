@@ -1,4 +1,4 @@
-/* Algemene layout */
+/* ===== Algemene layout ===== */
 body { 
   font-family: Arial, sans-serif; 
   max-width: 700px; 
@@ -7,7 +7,7 @@ body {
   padding: 0 10px; 
 }
 
-/* Top bar: taal + filters */
+/* ===== Top bar: taal + filters ===== */
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -15,7 +15,7 @@ body {
   margin-bottom: 20px;
 }
 
-/* Taalkeuze dropdown */
+/* Taal dropdown */
 #langSelect {
   padding: 6px 12px;
   font-size: 1rem;
@@ -24,7 +24,7 @@ body {
   outline: none;
 }
 
-/* Filters naast taal */
+/* Filters */
 .filters {
   display: flex;
   gap: 5px;
@@ -48,7 +48,7 @@ body {
   color: white;
 }
 
-/* Formulier input + knop */
+/* ===== Formulier ===== */
 form {
   display: flex;
   margin-bottom: 20px;
@@ -78,7 +78,7 @@ button#addBtn:hover {
   background: #0056b3;
 }
 
-/* Taaklijst */
+/* ===== Taaklijst ===== */
 ul {
   list-style: none;
   padding: 0;
@@ -114,7 +114,7 @@ label {
   align-items: center;
 }
 
-/* Buttons: delete + edit */
+/* ===== Buttons ===== */
 .delete-btn,
 .edit-btn {
   border: none;
@@ -143,14 +143,14 @@ label {
   background: #1e7e34;
 }
 
-/* Checkbox */
+/* ===== Checkbox ===== */
 input[type=checkbox] {
   margin-right: 10px;
   transform: scale(1.3);
   cursor: pointer;
 }
 
-/* Drag handle */
+/* ===== Drag handle ===== */
 .drag-handle {
   cursor: grab;
   margin-right: 10px;
@@ -158,7 +158,7 @@ input[type=checkbox] {
   user-select: none;
 }
 
-/* Inline edit input */
+/* ===== Inline edit input ===== */
 .edit-input {
   flex: 1;
   padding: 6px 10px;
@@ -174,7 +174,7 @@ input[type=checkbox] {
   box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
 }
 
-/* Drag & drop visuals */
+/* ===== Drag & drop visuals ===== */
 li.dragging {
   opacity: 0.6;
   transform: scale(0.98);
