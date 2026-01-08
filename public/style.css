@@ -1,5 +1,5 @@
 body { 
-  font-family: Arial; 
+  font-family: Arial, sans-serif; 
   max-width: 700px; 
   margin: 20px auto; 
   background: #f0f0f0; 
@@ -18,6 +18,8 @@ body {
 #langSelect {
   padding: 6px 12px;
   font-size: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
 }
 
 /* Filters naast taal */
@@ -31,6 +33,12 @@ body {
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  background: #ddd;
+  transition: background 0.2s;
+}
+
+.filters .filter-btn:hover {
+  background: #ccc;
 }
 
 .filters .filter-btn.active {
@@ -40,26 +48,109 @@ body {
 
 /* Formulier input + button */
 form { display: flex; margin-bottom: 20px; }
-input[type=text] { flex: 1; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 5px 0 0 5px; }
-button#addBtn { padding: 10px 20px; font-size: 1rem; border: none; background: #007bff; color: white; cursor: pointer; border-radius: 0 5px 5px 0; }
+input[type=text] { 
+  flex: 1; 
+  padding: 10px; 
+  font-size: 1rem; 
+  border: 1px solid #ccc; 
+  border-radius: 5px 0 0 5px; 
+}
+button#addBtn { 
+  padding: 10px 20px; 
+  font-size: 1rem; 
+  border: none; 
+  background: #007bff; 
+  color: white; 
+  cursor: pointer; 
+  border-radius: 0 5px 5px 0; 
+  transition: background 0.2s;
+}
 button#addBtn:hover { background: #0056b3; }
 
 /* Taaklijst */
-ul { list-style: none; padding: 0; margin: 0; max-height: 500px; overflow-y: auto; }
+ul { 
+  list-style: none; 
+  padding: 0; 
+  margin: 0; 
+  max-height: 500px; 
+  overflow-y: auto; 
+}
 
-li { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; margin-bottom: 10px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: grab; transition: transform 0.2s ease; }
+li { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  padding: 12px 15px; 
+  margin-bottom: 10px; 
+  background: #fff; 
+  border-radius: 8px; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+  cursor: grab; 
+  transition: transform 0.2s ease, box-shadow 0.2s ease; 
+}
 
-li.done label { text-decoration: line-through; color: #999; }
+li.done label span.task-text { 
+  text-decoration: line-through; 
+  color: #999; 
+}
 
-label { flex: 1; font-size: 1.1rem; cursor: pointer; }
+label { 
+  flex: 1; 
+  font-size: 1.1rem; 
+  cursor: pointer; 
+  display: flex;
+  align-items: center;
+}
 
-.delete-btn { background: #dc3545; border: none; color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; margin-left: 5px; }
+.delete-btn, .edit-btn { 
+  border: none; 
+  color: white; 
+  padding: 6px 12px; 
+  border-radius: 5px; 
+  cursor: pointer; 
+  font-size: 0.9rem; 
+  margin-left: 5px; 
+  transition: background 0.2s;
+}
+
+.delete-btn { background: #dc3545; }
 .delete-btn:hover { background: #a71d2a; }
 
-input[type=checkbox] { margin-right: 10px; transform: scale(1.3); cursor: pointer; }
+.edit-btn { background: #28a745; }
+.edit-btn:hover { background: #1e7e34; }
 
-.drag-handle { cursor: grab; margin-right: 10px; font-size: 1.2rem; user-select: none; }
+/* Checkbox */
+input[type=checkbox] { 
+  margin-right: 10px; 
+  transform: scale(1.3); 
+  cursor: pointer; 
+}
 
-li.dragging { opacity: 0.6; transform: scale(0.98); box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: transform 0.2s, opacity 0.2s; }
+/* Drag handle */
+.drag-handle { 
+  cursor: grab; 
+  margin-right: 10px; 
+  font-size: 1.2rem; 
+  user-select: none; 
+}
 
-li.drop-target { border: 2px dashed #007bff; margin-top: -2px; }
+/* Editing input */
+.edit-input { 
+  flex: 1; 
+  padding: 6px 10px; 
+  font-size: 1.1rem; 
+  border: 1px solid #007bff; 
+  border-radius: 5px; 
+}
+
+/* Drag & drop visuals */
+li.dragging { 
+  opacity: 0.6; 
+  transform: scale(0.98); 
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+}
+
+li.drop-target { 
+  border: 2px dashed #007bff; 
+  margin-top: -2px; 
+}
