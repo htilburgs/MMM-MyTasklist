@@ -9,6 +9,7 @@ const langSelect = document.getElementById("langSelect");
 let tasks = [];
 let currentFilter = "all";
 let lang = "nl";
+let translations = {};
 
 // ===== WebSocket voor realtime updates =====
 const ws = new WebSocket(`ws://${window.location.hostname}:8448`);
@@ -20,7 +21,35 @@ ws.onmessage = e => {
   }
 };
 
-// ===== Functie om taken te renderen =====
+// ===== Vertalingen toepassen =====
+function applyTranslations() {
+  taskText.placeholder = translations.PLACEHOLDER || "New task...";
+  addBtn.textContent = translations.ADD_BUTTON || "Add";
+
+  document.querySelectorAll(".delete-btn").forEach(btn => {
+    btn.textContent = translations.DELETE_BUTTON || "Delete";
+  });
+  document.querySelectorAll(".edit-btn").forEach(btn => {
+    btn.textContent = translations.EDIT_BUTTON || "Edit";
+  });
+
+  document.querySelector('.filter-btn[data-filter="all"]').textContent = translations.FILTER_ALL || "All";
+  document.querySelector('.filter-btn[data-filter="active"]').textContent = translations.FILTER_ACTIVE || "Active";
+  document.querySelector('.filter-btn[data-filter="done"]').textContent = translations.FILTER_DONE || "Done";
+}
+
+// ===== Vertalingen laden =====
+async function loadTranslations() {
+  try {
+    const res = await fetch(`/api/lang?lang=${lang}`);
+    translations = await res.json();
+    applyTranslations();
+  } catch (e) {
+    console.error("Fout bij laden vertalingen:", e);
+  }
+}
+
+// ===== Taken renderen =====
 function renderTasks() {
   taskList.innerHTML = "";
 
@@ -56,18 +85,18 @@ function renderTasks() {
     // Edit knop
     const editBtn = document.createElement("button");
     editBtn.className = "edit-btn";
-    editBtn.textContent = "Edit";
+    editBtn.textContent = translations.EDIT_BUTTON || "Edit";
     editBtn.addEventListener("click", () => editTask(task.id, textSpan));
     li.appendChild(editBtn);
 
     // Delete knop
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "delete-btn";
-    deleteBtn.textContent = "Delete";
+    deleteBtn.textContent = translations.DELETE_BUTTON || "Delete";
     deleteBtn.addEventListener("click", () => deleteTask(task.id));
     li.appendChild(deleteBtn);
 
-    // Drag & drop events
+    // Drag & drop
     handle.addEventListener("mousedown", () => li.draggable = true);
     li.addEventListener("dragstart", () => li.classList.add("dragging"));
     li.addEventListener("dragover", e => {
@@ -91,6 +120,9 @@ function renderTasks() {
 
     taskList.appendChild(li);
   });
+
+  // Vertalingen toepassen op knoppen na render
+  applyTranslations();
 }
 
 // ===== Drag helper =====
@@ -141,7 +173,7 @@ async function editTask(id, textSpan) {
         });
       }
     }
-    input.replaceWith(textSpan);
+    renderTasks(); // Zorgt dat knoppen correct vertaald blijven
   };
 
   input.addEventListener("blur", () => finishEdit());
@@ -162,27 +194,6 @@ filterBtns.forEach(btn => {
 });
 
 // ===== Taal selector =====
-async function loadTranslations() {
-  try {
-    const res = await fetch(`/api/lang?lang=${lang}`);
-    const translations = await res.json();
-
-    taskText.placeholder = translations.PLACEHOLDER || "New task...";
-    addBtn.textContent = translations.ADD_BUTTON || "Add";
-
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.textContent = translations.DELETE_BUTTON || "Delete";
-    });
-    document.querySelectorAll(".edit-btn").forEach(btn => {
-      btn.textContent = translations.EDIT_BUTTON || "Edit";
-    });
-
-    document.querySelector('.filter-btn[data-filter="all"]').textContent = translations.FILTER_ALL || "All";
-    document.querySelector('.filter-btn[data-filter="active"]').textContent = translations.FILTER_ACTIVE || "Active";
-    document.querySelector('.filter-btn[data-filter="done"]').textContent = translations.FILTER_DONE || "Done";
-  } catch (e) { console.error(e); }
-}
-
 langSelect.addEventListener("change", async () => {
   lang = langSelect.value;
   try {
@@ -191,7 +202,7 @@ langSelect.addEventListener("change", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lang })
     });
-  } catch(e) { console.error(e); }
+  } catch (e) { console.error(e); }
   await loadTranslations();
 });
 
@@ -206,7 +217,7 @@ langSelect.addEventListener("change", async () => {
   } catch {}
 })();
 
-// ===== Init taken =====
+// Init taken
 (async function initTasks() {
   try {
     const res = await fetch("/api/tasks");
