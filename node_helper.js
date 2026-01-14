@@ -7,209 +7,180 @@ const WebSocket = require("ws");
 module.exports = NodeHelper.create({
   start() {
     this.tasksFile = path.join(__dirname, "tasks.json");
-    this.clients = [];
-    this.initStorage();
+    this.clients = []; // Webinterface clients
     this.setupServer();
-    console.log("MMM-MyTasklist v2 helper gestart");
+    console.log("MMM-MyTasklist helper gestart");
   },
-
-  /* =====================
-   * Storage
-   * ===================== */
-
-  initStorage() {
-    if (!fs.existsSync(this.tasksFile)) {
-      fs.writeFileSync(
-        this.tasksFile,
-        JSON.stringify(
-          { settings: { lang: "nl" }, tasks: [] },
-          null,
-          2
-        ),
-        "utf8"
-      );
-    }
-  },
-
-  loadData() {
-    try {
-      return JSON.parse(fs.readFileSync(this.tasksFile, "utf8"));
-    } catch {
-      return { settings: { lang: "nl" }, tasks: [] };
-    }
-  },
-
-  saveData(data) {
-    fs.writeFileSync(this.tasksFile, JSON.stringify(data, null, 2), "utf8");
-  },
-
-  /* =====================
-   * Server
-   * ===================== */
 
   setupServer() {
     this.app = express();
     this.app.use(express.json());
     this.app.use(express.static(path.join(__dirname, "public")));
 
-    this.setupApi();
-    this.setupWebSocket();
+    // ===== Toevoegen =====
+    this.app.post("/api/tasks", (req, res) => {
+      const { text } = req.body;
+      if (!text || !text.trim()) return res.status(400).send("Geen tekst opgegeven");
 
-    this.server = this.app.listen(8448, () =>
-      console.log("Webinterface draait op poort 8448")
-    );
-  },
+      const data = this.loadTasks();
+      const tasks = data.tasks || [];
+      tasks.push({ id: Date.now(), text: text.trim(), done: false });
 
-  /* =====================
-   * API
-   * ===================== */
+      this.saveTasks(tasks, data.lang);
+      this.broadcastTasks(tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
 
-  setupApi() {
-    /* ---- SETTINGS ---- */
-
-    this.app.get("/api/settings", (req, res) => {
-      const data = this.loadData();
-      res.json(data.settings);
+      res.json({ tasks, lang: data.lang });
     });
 
-    this.app.patch("/api/settings", (req, res) => {
-      const data = this.loadData();
-      data.settings = { ...data.settings, ...req.body };
-      this.saveData(data);
+    // ===== Toggle done =====
+    this.app.post("/api/toggle/:id", (req, res) => {
+      const data = this.loadTasks();
+      const tasks = data.tasks || [];
+      const task = tasks.find(t => t.id == req.params.id);
+      if (task) task.done = !task.done;
 
-      this.broadcast({ type: "SETTINGS", settings: data.settings });
-      this.sendSocketNotification("SETTINGS", data.settings);
+      this.saveTasks(tasks, data.lang);
+      this.broadcastTasks(tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
 
-      res.json(data.settings);
+      res.json({ tasks, lang: data.lang });
     });
 
-    /* ---- TRANSLATIONS ---- */
+    // ===== Delete =====
+    this.app.post("/api/delete/:id", (req, res) => {
+      const data = this.loadTasks();
+      const tasks = (data.tasks || []).filter(t => t.id != req.params.id);
 
-    this.app.get("/api/translations", (req, res) => {
+      this.saveTasks(tasks, data.lang);
+      this.broadcastTasks(tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
+
+      res.json({ tasks, lang: data.lang });
+    });
+
+    // ===== Edit =====
+    this.app.post("/api/edit/:id", (req, res) => {
+      const { text } = req.body;
+      if (!text || !text.trim()) return res.status(400).send("Geen tekst opgegeven");
+
+      const data = this.loadTasks();
+      const tasks = data.tasks || [];
+      const task = tasks.find(t => t.id == req.params.id);
+      if (!task) return res.status(404).send("Taak niet gevonden");
+
+      task.text = text.trim();
+
+      this.saveTasks(tasks, data.lang);
+      this.broadcastTasks(tasks);
+      this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
+
+      res.json({ tasks, lang: data.lang });
+    });
+
+    // ===== Reorder =====
+    this.app.post("/api/reorder", (req, res) => {
+      const { orderedIds } = req.body;
+      if (!Array.isArray(orderedIds)) return res.status(400).send("Invalid array");
+
+      const data = this.loadTasks();
+      const tasks = data.tasks || [];
+      const newTasks = orderedIds.map(id => tasks.find(t => t.id == id)).filter(Boolean);
+
+      this.saveTasks(newTasks, data.lang);
+      this.broadcastTasks(newTasks);
+      this.sendSocketNotification("TASKS", { tasks: newTasks, lang: data.lang });
+
+      res.json({ tasks: newTasks, lang: data.lang });
+    });
+
+    // ===== Get tasks =====
+    this.app.get("/api/tasks", (req, res) => {
+      const data = this.loadTasks();
+      res.json(data);
+    });
+
+    // ===== Set language =====
+    this.app.post("/api/lang", (req, res) => {
+      const { lang } = req.body;
+      if (!lang) return res.status(400).send("Geen taal opgegeven");
+
+      const data = this.loadTasks();
+      this.saveTasks(data.tasks, lang);
+      res.json({ success: true, lang });
+    });
+
+    // ===== Get translations =====
+    this.app.get("/api/lang", (req, res) => {
       const lang = req.query.lang || "nl";
       try {
-        res.json(
-          require(path.join(__dirname, "translations", `${lang}.json`))
-        );
+        const translations = require(path.join(__dirname, "translations", `${lang}.json`));
+        res.json(translations);
       } catch {
         res.json({});
       }
     });
 
-    /* ---- TASKS ---- */
-
-    this.app.get("/api/tasks", (req, res) => {
-      const data = this.loadData();
-      res.json(data.tasks);
-    });
-
-    this.app.post("/api/tasks", (req, res) => {
-      if (!req.body.text?.trim()) {
-        return res.status(400).send("Geen tekst");
-      }
-
-      const data = this.loadData();
-      data.tasks.push({
-        id: Date.now(),
-        text: req.body.text.trim(),
-        done: false
-      });
-
-      this.saveData(data);
-      this.broadcast({ type: "TASKS", tasks: data.tasks });
-
-      res.json(data.tasks);
-    });
-
-    this.app.patch("/api/tasks/:id", (req, res) => {
-      const data = this.loadData();
-      const task = data.tasks.find(t => t.id == req.params.id);
-      if (!task) return res.status(404).send("Niet gevonden");
-
-      task.done = !task.done;
-      this.saveData(data);
-      this.broadcast({ type: "TASKS", tasks: data.tasks });
-
-      res.json(task);
-    });
-
-    this.app.put("/api/tasks/:id", (req, res) => {
-      const data = this.loadData();
-      const task = data.tasks.find(t => t.id == req.params.id);
-      if (!task || !req.body.text?.trim())
-        return res.status(400).send("Ongeldig");
-
-      task.text = req.body.text.trim();
-      this.saveData(data);
-      this.broadcast({ type: "TASKS", tasks: data.tasks });
-
-      res.json(task);
-    });
-
-    this.app.delete("/api/tasks/:id", (req, res) => {
-      const data = this.loadData();
-      data.tasks = data.tasks.filter(t => t.id != req.params.id);
-
-      this.saveData(data);
-      this.broadcast({ type: "TASKS", tasks: data.tasks });
-
-      res.json(data.tasks);
-    });
-
-    this.app.post("/api/tasks/reorder", (req, res) => {
-      const { orderedIds } = req.body;
-      const data = this.loadData();
-
-      data.tasks = orderedIds
-        .map(id => data.tasks.find(t => t.id == id))
-        .filter(Boolean);
-
-      this.saveData(data);
-      this.broadcast({ type: "TASKS", tasks: data.tasks });
-
-      res.json(data.tasks);
-    });
-  },
-
-  /* =====================
-   * WebSocket
-   * ===================== */
-
-  setupWebSocket() {
-    this.wss = new WebSocket.Server({ server: this.server });
+    // ===== Start server + WebSocket =====
+    const server = this.app.listen(8448, () => console.log("Webinterface draait op poort 8448"));
+    this.wss = new WebSocket.Server({ server });
 
     this.wss.on("connection", ws => {
       this.clients.push(ws);
-      const data = this.loadData();
+      const data = this.loadTasks();
+      ws.send(JSON.stringify({ type: "TASKS", tasks: data.tasks || [], lang: data.lang || "nl" }));
 
-      ws.send(JSON.stringify({
-        type: "INIT",
-        tasks: data.tasks,
-        settings: data.settings
-      }));
-
-      ws.on("close", () => {
-        this.clients = this.clients.filter(c => c !== ws);
-      });
+      ws.on("close", () => { this.clients = this.clients.filter(c => c !== ws); });
     });
   },
 
-  broadcast(payload) {
-    const msg = JSON.stringify(payload);
+  // ===== WebSocket broadcast =====
+  broadcastTasks(tasks) {
+    const message = JSON.stringify({ type: "TASKS", tasks });
     this.clients.forEach(ws => {
-      if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+      if (ws.readyState === WebSocket.OPEN) ws.send(message);
     });
   },
 
-  /* =====================
-   * MagicMirror socket
-   * ===================== */
-
+  // ===== MagicMirror socket =====
   socketNotificationReceived(notification, payload) {
-    const data = this.loadData();
+    const data = this.loadTasks();
+    const tasks = data.tasks || [];
 
-    if (notification === "GET_DATA") {
-      this.sendSocketNotification("INIT", data);
+    switch (notification) {
+      case "GET_TASKS":
+        this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
+        break;
+
+      case "TOGGLE_TASK":
+        const task = tasks.find(t => t.id == payload);
+        if (task) task.done = !task.done;
+        this.saveTasks(tasks, data.lang);
+        this.broadcastTasks(tasks);
+        this.sendSocketNotification("TASKS", { tasks, lang: data.lang });
+        break;
+    }
+  },
+
+  // ===== Load / Save tasks.json =====
+  loadTasks() {
+    try {
+      if (!fs.existsSync(this.tasksFile)) {
+        fs.writeFileSync(this.tasksFile, JSON.stringify({ tasks: [], lang: "nl" }, null, 2), "utf8");
+      }
+      return JSON.parse(fs.readFileSync(this.tasksFile, "utf8"));
+    } catch (e) {
+      console.error("Fout bij laden tasks.json:", e);
+      return { tasks: [], lang: "nl" };
+    }
+  },
+
+  saveTasks(tasks, langToSave) {
+    try {
+      const data = { tasks, lang: langToSave || "nl" };
+      fs.writeFileSync(this.tasksFile, JSON.stringify(data, null, 2), "utf8");
+    } catch (e) {
+      console.error("Fout bij opslaan tasks.json:", e);
     }
   }
 });
