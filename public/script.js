@@ -11,17 +11,35 @@ let currentFilter = "all";
 let lang = "nl";
 let translations = {};
 
-// ===== WebSocket voor realtime updates =====
+// ===== WebSocket realtime =====
 const ws = new WebSocket(`ws://${window.location.hostname}:8448`);
+
 ws.onmessage = e => {
   const data = JSON.parse(e.data);
-  if (data.type === "TASKS") {
-    tasks = data.tasks;
-    renderTasks();
+
+  switch (data.type) {
+    case "INIT":
+      tasks = data.tasks;
+      lang = data.settings.lang || "nl";
+      langSelect.value = lang;
+      loadTranslations();
+      renderTasks();
+      break;
+
+    case "TASKS":
+      tasks = data.tasks;
+      renderTasks();
+      break;
+
+    case "SETTINGS":
+      lang = data.settings.lang || "nl";
+      langSelect.value = lang;
+      loadTranslations();
+      break;
   }
 };
 
-// ===== Vertalingen toepassen =====
+// ===== Vertalingen =====
 function applyTranslations() {
   taskText.placeholder = translations.PLACEHOLDER || "New task...";
   addBtn.textContent = translations.ADD_BUTTON || "Add";
@@ -29,19 +47,22 @@ function applyTranslations() {
   document.querySelectorAll(".delete-btn").forEach(btn => {
     btn.textContent = translations.DELETE_BUTTON || "Delete";
   });
+
   document.querySelectorAll(".edit-btn").forEach(btn => {
     btn.textContent = translations.EDIT_BUTTON || "Edit";
   });
 
-  document.querySelector('.filter-btn[data-filter="all"]').textContent = translations.FILTER_ALL || "All";
-  document.querySelector('.filter-btn[data-filter="active"]').textContent = translations.FILTER_ACTIVE || "Active";
-  document.querySelector('.filter-btn[data-filter="done"]').textContent = translations.FILTER_DONE || "Done";
+  document.querySelector('.filter-btn[data-filter="all"]').textContent =
+    translations.FILTER_ALL || "All";
+  document.querySelector('.filter-btn[data-filter="active"]').textContent =
+    translations.FILTER_ACTIVE || "Active";
+  document.querySelector('.filter-btn[data-filter="done"]').textContent =
+    translations.FILTER_DONE || "Done";
 }
 
-// ===== Vertalingen laden =====
 async function loadTranslations() {
   try {
-    const res = await fetch(`/api/lang?lang=${lang}`);
+    const res = await fetch(`/api/translations?lang=${lang}`);
     translations = await res.json();
     applyTranslations();
   } catch (e) {
@@ -49,7 +70,7 @@ async function loadTranslations() {
   }
 }
 
-// ===== Taken renderen =====
+// ===== Render taken =====
 function renderTasks() {
   taskList.innerHTML = "";
 
@@ -60,7 +81,8 @@ function renderTasks() {
   filtered.forEach(task => {
     const li = document.createElement("li");
     li.dataset.id = task.id;
-    li.classList.toggle("done", task.done);
+    li.classList.add("task-item");
+    if (task.done) li.classList.add("done");
 
     // Drag handle
     const handle = document.createElement("span");
@@ -68,19 +90,18 @@ function renderTasks() {
     handle.textContent = "≡";
     li.appendChild(handle);
 
-    // Checkbox + label
-    const label = document.createElement("label");
+    // Checkbox
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = task.done;
     checkbox.addEventListener("change", () => toggleTask(task.id));
-    label.appendChild(checkbox);
+    li.appendChild(checkbox);
 
+    // Tekst
     const textSpan = document.createElement("span");
-    textSpan.textContent = task.text;
     textSpan.className = "task-text";
-    label.appendChild(textSpan);
-    li.appendChild(label);
+    textSpan.textContent = task.text;
+    li.appendChild(textSpan);
 
     // Edit knop
     const editBtn = document.createElement("button");
@@ -97,43 +118,12 @@ function renderTasks() {
     li.appendChild(deleteBtn);
 
     // Drag & drop
-    handle.addEventListener("mousedown", () => li.draggable = true);
-    li.addEventListener("dragstart", () => li.classList.add("dragging"));
-    li.addEventListener("dragover", e => {
-      e.preventDefault();
-      const dragging = document.querySelector(".dragging");
-      const after = getDragAfterElement(taskList, e.clientY);
-      taskList.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-      if (!after) taskList.appendChild(dragging);
-      else { after.classList.add("drop-target"); taskList.insertBefore(dragging, after); }
-    });
-    li.addEventListener("dragend", async () => {
-      li.classList.remove("dragging"); li.draggable = false;
-      taskList.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-      const orderedIds = [...taskList.children].map(li => Number(li.dataset.id));
-      await fetch("/api/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds })
-      });
-    });
+    makeDraggable(li, taskList);
 
     taskList.appendChild(li);
   });
 
-  // Vertalingen toepassen op knoppen na render
   applyTranslations();
-}
-
-// ===== Drag helper =====
-function getDragAfterElement(container, y) {
-  const draggable = [...container.querySelectorAll("li:not(.dragging)")];
-  return draggable.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) return { offset, element: child };
-    else return closest;
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 // ===== CRUD acties =====
@@ -141,16 +131,23 @@ taskForm.addEventListener("submit", async e => {
   e.preventDefault();
   const text = taskText.value.trim();
   if (!text) return;
+
   await fetch("/api/tasks", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text })
   });
+
   taskText.value = "";
 });
 
-async function toggleTask(id) { await fetch(`/api/toggle/${id}`, { method: "POST" }); }
-async function deleteTask(id) { await fetch(`/api/delete/${id}`, { method: "POST" }); }
+async function toggleTask(id) {
+  await fetch(`/api/tasks/${id}`, { method: "PATCH" });
+}
+
+async function deleteTask(id) {
+  await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+}
 
 // ===== Inline edit =====
 async function editTask(id, textSpan) {
@@ -166,14 +163,14 @@ async function editTask(id, textSpan) {
     if (!cancel) {
       const newText = input.value.trim();
       if (newText && newText !== originalText) {
-        await fetch(`/api/edit/${id}`, {
-          method: "POST",
+        await fetch(`/api/tasks/${id}`, {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: newText })
         });
       }
     }
-    renderTasks(); // Zorgt dat knoppen correct vertaald blijven
+    renderTasks();
   };
 
   input.addEventListener("blur", () => finishEdit());
@@ -193,36 +190,53 @@ filterBtns.forEach(btn => {
   });
 });
 
-// ===== Taal selector =====
+// ===== Taal wijzigen =====
 langSelect.addEventListener("change", async () => {
   lang = langSelect.value;
-  try {
-    await fetch("/api/lang", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lang })
-    });
-  } catch (e) { console.error(e); }
-  await loadTranslations();
+  await fetch("/api/settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lang })
+  });
 });
 
-// Init: haal huidige taal op
-(async function initLanguage() {
-  try {
-    const res = await fetch("/api/lang?getLang=true");
-    const data = await res.json();
-    lang = data.lang || "nl";
-    langSelect.value = lang;
-    await loadTranslations();
-  } catch {}
-})();
+// ===== Drag & drop helper =====
+function makeDraggable(li, container) {
+  const handle = li.querySelector(".drag-handle");
 
-// Init taken
-(async function initTasks() {
-  try {
-    const res = await fetch("/api/tasks");
-    const data = await res.json();
-    tasks = data.tasks || [];
-  } catch { tasks = []; }
-  renderTasks();
-})();
+  handle.addEventListener("mousedown", () => li.draggable = true);
+
+  li.addEventListener("dragstart", () => li.classList.add("dragging"));
+
+  li.addEventListener("dragover", e => {
+    e.preventDefault();
+    const dragging = container.querySelector(".dragging");
+    const after = getDragAfterElement(container, e.clientY);
+    container.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
+    if (!after) container.appendChild(dragging);
+    else { after.classList.add("drop-target"); container.insertBefore(dragging, after); }
+  });
+
+  li.addEventListener("dragend", async () => {
+    li.classList.remove("dragging");
+    li.draggable = false;
+    container.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
+
+    const orderedIds = [...container.children].map(li => Number(li.dataset.id));
+    await fetch("/api/tasks/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderedIds })
+    });
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggable = [...container.querySelectorAll("li:not(.dragging)")];
+  return draggable.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) return { offset, element: child };
+    else return closest;
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
