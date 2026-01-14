@@ -1,4 +1,3 @@
-
 // ===== Elementen =====
 const taskList = document.getElementById("taskList");
 const taskForm = document.getElementById("taskForm");
@@ -150,6 +149,7 @@ taskForm.addEventListener("submit", async e => {
   taskText.value = "";
 });
 
+// Toggle, delete
 async function toggleTask(id) { await fetch(`/api/toggle/${id}`, { method: "POST" }); }
 async function deleteTask(id) { await fetch(`/api/delete/${id}`, { method: "POST" }); }
 
@@ -162,6 +162,7 @@ async function editTask(id, textSpan) {
   input.className = "edit-input";
   textSpan.replaceWith(input);
   input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
 
   const finishEdit = async (cancel = false) => {
     if (!cancel) {
@@ -174,7 +175,7 @@ async function editTask(id, textSpan) {
         });
       }
     }
-    renderTasks(); // Zorgt dat knoppen correct vertaald blijven
+    renderTasks();
   };
 
   input.addEventListener("blur", () => finishEdit());
@@ -207,23 +208,22 @@ langSelect.addEventListener("change", async () => {
   await loadTranslations();
 });
 
-// Init: haal huidige taal op
-(async function initLanguage() {
-  try {
-    const res = await fetch("/api/lang?getLang=true");
-    const data = await res.json();
-    lang = data.lang || "nl";
-    langSelect.value = lang;
-    await loadTranslations();
-  } catch {}
-})();
-
-// Init taken
-(async function initTasks() {
+// ===== Init: eerst tasks.json ophalen inclusief taal =====
+(async function init() {
   try {
     const res = await fetch("/api/tasks");
     const data = await res.json();
     tasks = data.tasks || [];
-  } catch { tasks = []; }
+    if (data.lang) {       // ✅ taal uit tasks.json gebruiken
+      lang = data.lang;
+      langSelect.value = lang;
+    }
+
+    await loadTranslations();  // vertalingen laden na juiste taal
+  } catch (e) {
+    console.error("Fout bij ophalen taken:", e);
+    tasks = [];
+  }
+
   renderTasks();
 })();
