@@ -75,5 +75,5 @@ v1.0.0  - Initial release </br>
 v1.1.0  - Update Look & Feel </br>
 v1.1.1  - Change Webinterface port from 8123 to 8448 </br>
 v1.2.0  - Add possibility to edit the tasks in the Webinterface </br>
-v1.2.1  - Update language selector didn't work correct in Webinterface (alway dutch after reload)</br>
+v1.2.1  - Update language selector didn't work correct in Webinterface (always dutch after reload)</br>
 
