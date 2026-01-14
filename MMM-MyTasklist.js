@@ -1,27 +1,20 @@
+
 Module.register("MMM-MyTasklist", {
-  // ====================
-  // Default config
-  // ====================
   defaults: {
     updateInterval: 300000, // 5 minuten
-    showCompleted: true,
-    maxTasks: null
+    showCompleted: true,    // toon voltooide taken
+    maxTasks: null          // null = geen limiet
   },
 
-  // ====================
-  // Module start
-  // ====================
   start() {
     this.tasks = [];
     this.lang = "nl";
     this.translations = {};
-
-    // Haal data van NodeHelper
-    this.sendSocketNotification("GET_DATA");
+    this.sendSocketNotification("GET_TASKS");
 
     // Periodieke update
     this.updateTimer = setInterval(() => {
-      this.sendSocketNotification("GET_DATA");
+      this.sendSocketNotification("GET_TASKS");
     }, this.config.updateInterval);
   },
 
@@ -33,27 +26,18 @@ Module.register("MMM-MyTasklist", {
   // Socket ontvangen
   // ====================
   socketNotificationReceived(notification, payload) {
-    switch (notification) {
-      case "INIT":
-        this.tasks = payload.tasks || [];
-        this.lang = payload.settings?.lang || "nl";
-        this.loadTranslations().then(() => this.updateDom());
-        break;
+    if (notification === "TASKS") {
+      // payload = { tasks: [...], lang: "nl" }
+      this.tasks = Array.isArray(payload.tasks) ? payload.tasks : [];
+      this.lang = payload.lang || "nl";
 
-      case "TASKS":
-        this.tasks = payload.tasks || [];
-        this.updateDom();
-        break;
-
-      case "SETTINGS":
-        this.lang = payload.lang || "nl";
-        this.loadTranslations().then(() => this.updateDom());
-        break;
+      // Laad vertalingen
+      this.loadTranslations().then(() => this.updateDom());
     }
   },
 
   // ====================
-  // Vertalingen
+  // Vertalingen laden
   // ====================
   async loadTranslations() {
     try {
@@ -100,9 +84,7 @@ Module.register("MMM-MyTasklist", {
   createTaskElement(task) {
     const li = document.createElement("li");
     li.classList.add("task-item");
-    li.dataset.id = task.id;
 
-    // Checkbox
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.checked = task.done;
@@ -110,120 +92,14 @@ Module.register("MMM-MyTasklist", {
       this.sendSocketNotification("TOGGLE_TASK", task.id);
     });
 
-    // Tekst
     const span = document.createElement("span");
     span.textContent = task.text;
     if (task.done) span.classList.add("done");
 
-    // Edit knop
-    const editBtn = document.createElement("button");
-    editBtn.className = "edit-btn";
-    editBtn.textContent = this.translations.EDIT_BUTTON || "Edit";
-    editBtn.addEventListener("click", () => this.editTask(task, span));
-
-    // Delete knop
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "delete-btn";
-    deleteBtn.textContent = this.translations.DELETE_BUTTON || "Delete";
-    deleteBtn.addEventListener("click", () => this.deleteTask(task.id));
-
-    // Drag handle
-    const handle = document.createElement("span");
-    handle.className = "drag-handle";
-    handle.textContent = "≡";
-
-    li.appendChild(handle);
     li.appendChild(checkbox);
     li.appendChild(span);
-    li.appendChild(editBtn);
-    li.appendChild(deleteBtn);
-
-    // Drag & drop events
-    this.makeDraggable(li, handle);
 
     return li;
-  },
-
-  // ====================
-  // Inline edit
-  // ====================
-  editTask(task, textSpan) {
-    const originalText = textSpan.textContent;
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = originalText;
-    input.className = "edit-input";
-    textSpan.replaceWith(input);
-    input.focus();
-
-    const finishEdit = (cancel = false) => {
-      if (!cancel) {
-        const newText = input.value.trim();
-        if (newText && newText !== originalText) {
-          fetch(`/api/tasks/${task.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: newText })
-          });
-        }
-      }
-      this.updateDom();
-    };
-
-    input.addEventListener("blur", () => finishEdit());
-    input.addEventListener("keydown", e => {
-      if (e.key === "Enter") finishEdit();
-      if (e.key === "Escape") finishEdit(true);
-    });
-  },
-
-  // ====================
-  // Delete task
-  // ====================
-  deleteTask(id) {
-    fetch(`/api/tasks/${id}`, { method: "DELETE" });
-  },
-
-  // ====================
-  // Drag & drop helper
-  // ====================
-  makeDraggable(li, handle) {
-    const ul = li.parentElement;
-
-    handle.addEventListener("mousedown", () => li.draggable = true);
-
-    li.addEventListener("dragstart", () => li.classList.add("dragging"));
-
-    li.addEventListener("dragover", e => {
-      e.preventDefault();
-      const dragging = ul.querySelector(".dragging");
-      const after = this.getDragAfterElement(ul, e.clientY);
-      ul.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-      if (!after) ul.appendChild(dragging);
-      else { after.classList.add("drop-target"); ul.insertBefore(dragging, after); }
-    });
-
-    li.addEventListener("dragend", async () => {
-      li.classList.remove("dragging"); li.draggable = false;
-      ul.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
-
-      const orderedIds = [...ul.children].map(li => Number(li.dataset.id));
-      await fetch("/api/tasks/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds })
-      });
-    });
-  },
-
-  getDragAfterElement(container, y) {
-    const draggable = [...container.querySelectorAll("li:not(.dragging)")];
-    return draggable.reduce((closest, child) => {
-      const box = child.getBoundingClientRect();
-      const offset = y - box.top - box.height / 2;
-      if (offset < 0 && offset > closest.offset) return { offset, element: child };
-      else return closest;
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
   },
 
   suspend() {
@@ -231,6 +107,6 @@ Module.register("MMM-MyTasklist", {
   },
 
   resume() {
-    this.sendSocketNotification("GET_DATA");
+    this.sendSocketNotification("GET_TASKS");
   }
 });
