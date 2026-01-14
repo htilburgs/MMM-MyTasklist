@@ -1,187 +1,188 @@
-/* ===== Algemene layout ===== */
-body { 
-  font-family: Arial, sans-serif; 
-  max-width: 700px; 
-  margin: 20px auto; 
-  background: #f0f0f0; 
-  padding: 0 10px; 
+/* ==============================
+   Body en basis
+   ============================== */
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background: #f5f5f5;
+  color: #333;
 }
 
-/* ===== Top bar: taal + filters ===== */
+em {
+  color: #666;
+  font-style: italic;
+}
+
+/* ==============================
+   Top bar: taal + filters
+   ============================== */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
-/* Taal dropdown */
-#langSelect {
-  padding: 6px 12px;
+.top-bar select {
+  padding: 5px 8px;
   font-size: 1rem;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  outline: none;
 }
 
-/* Filters */
-.filters {
-  display: flex;
-  gap: 5px;
-}
-
-.filters .filter-btn {
-  padding: 6px 12px;
+.filters button {
+  margin-left: 5px;
+  padding: 5px 10px;
+  font-size: 0.9rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
+  background: #e0e0e0;
   cursor: pointer;
-  background: #ddd;
-  transition: background 0.2s, color 0.2s;
-}
-
-.filters .filter-btn:hover {
-  background: #ccc;
-}
-
-.filters .filter-btn.active {
-  background: #007bff;
-  color: white;
-}
-
-/* ===== Formulier ===== */
-form {
-  display: flex;
-  margin-bottom: 20px;
-}
-
-input[type=text] {
-  flex: 1;
-  padding: 10px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 5px 0 0 5px;
-  outline: none;
-}
-
-button#addBtn {
-  padding: 10px 20px;
-  font-size: 1rem;
-  border: none;
-  background: #007bff;
-  color: white;
-  cursor: pointer;
-  border-radius: 0 5px 5px 0;
   transition: background 0.2s;
 }
 
-button#addBtn:hover {
-  background: #0056b3;
+.filters button.active {
+  background: #007acc;
+  color: #fff;
 }
 
-/* ===== Taaklijst ===== */
-ul {
+.filters button:hover:not(.active) {
+  background: #d0d0d0;
+}
+
+/* ==============================
+   Task form
+   ============================== */
+#taskForm {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+#taskForm input[type="text"] {
+  flex: 1;
+  padding: 8px;
+  font-size: 1rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+#taskForm button {
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background: #007acc;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#taskForm button:hover {
+  background: #005fa3;
+}
+
+/* ==============================
+   Task list
+   ============================== */
+#taskList {
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 500px;
-  overflow-y: auto;
 }
 
-li {
+.task-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 15px;
-  margin-bottom: 10px;
+  gap: 10px;
+  padding: 8px 10px;
   background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  cursor: grab;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  box-shadow: 0 0 3px rgba(0,0,0,0.1);
 }
 
-li.done label span.task-text {
+.task-item.dragging {
+  opacity: 0.5;
+}
+
+.task-item .done {
   text-decoration: line-through;
   color: #999;
 }
 
-/* Label + tekst */
-label {
+.task-item .task-text {
   flex: 1;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
 }
 
-/* ===== Buttons ===== */
-.delete-btn,
-.edit-btn {
+/* ==============================
+   Buttons inside tasks
+   ============================== */
+.edit-btn,
+.delete-btn {
+  padding: 4px 8px;
+  font-size: 0.85rem;
   border: none;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
-  margin-left: 5px;
   transition: background 0.2s;
+}
+
+.edit-btn {
+  background: #ffc107;
+  color: #fff;
+  margin-left: 5px;
+}
+
+.edit-btn:hover {
+  background: #e0a800;
 }
 
 .delete-btn {
   background: #dc3545;
+  color: #fff;
+  margin-left: 5px;
 }
 
 .delete-btn:hover {
-  background: #a71d2a;
+  background: #b52a37;
 }
 
-.edit-btn {
-  background: #28a745;
-}
-
-.edit-btn:hover {
-  background: #1e7e34;
-}
-
-/* ===== Checkbox ===== */
-input[type=checkbox] {
-  margin-right: 10px;
-  transform: scale(1.3);
-  cursor: pointer;
-}
-
-/* ===== Drag handle ===== */
+/* ==============================
+   Drag handle
+   ============================== */
 .drag-handle {
   cursor: grab;
-  margin-right: 10px;
-  font-size: 1.2rem;
   user-select: none;
+  font-weight: bold;
+  padding: 0 5px;
 }
 
-/* ===== Inline edit input ===== */
+/* ==============================
+   Inline edit input
+   ============================== */
 .edit-input {
   flex: 1;
-  padding: 6px 10px;
-  font-size: 1.1rem;
-  border: 1px solid #007bff;
-  border-radius: 5px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  padding: 6px 8px;
+  font-size: 1rem;
+  border: 1px solid #007acc;
+  border-radius: 4px;
 }
 
-.edit-input:focus {
-  border-color: #0056b3;
-  box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
-}
+/* ==============================
+   Responsive
+   ============================== */
+@media (max-width: 600px) {
+  .top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 
-/* ===== Drag & drop visuals ===== */
-li.dragging {
-  opacity: 0.6;
-  transform: scale(0.98);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-}
+  #taskForm {
+    flex-direction: column;
+  }
 
-li.drop-target {
-  border: 2px dashed #007bff;
-  margin-top: -2px;
+  .filters button {
+    margin-left: 0;
+    margin-right: 5px;
+  }
 }
