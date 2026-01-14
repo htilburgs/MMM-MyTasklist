@@ -1,38 +1,39 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyTasklist Webinterface</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyTasklist Webinterface</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- Top bar: taal + filters -->
-<div class="top-bar">
-  <select id="langSelect">
-    <option value="nl">Nederlands</option>
-    <option value="en">English</option>
-    <option value="de">Deutsch</option>
-    <option value="fr">Français</option>
-  </select>
+  <!-- Top bar: taal + filters -->
+  <div class="top-bar">
+    <select id="langSelect">
+      <option value="nl">Nederlands</option>
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+    </select>
 
-  <div class="filters">
-    <button class="filter-btn active" data-filter="all">Alle</button>
-    <button class="filter-btn" data-filter="active">Actief</button>
-    <button class="filter-btn" data-filter="done">Gereed</button>
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all">Alle</button>
+      <button class="filter-btn" data-filter="active">Actief</button>
+      <button class="filter-btn" data-filter="done">Gereed</button>
+    </div>
   </div>
-</div>
 
-<!-- Formulier om nieuwe taken toe te voegen -->
-<form id="taskForm">
-  <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
-  <button type="submit" id="addBtn">Toevoegen</button>
-</form>
+  <!-- Formulier om nieuwe taken toe te voegen -->
+  <form id="taskForm">
+    <input type="text" id="taskText" placeholder="Nieuwe taak..." required>
+    <button type="submit" id="addBtn">Toevoegen</button>
+  </form>
 
-<!-- Taaklijst -->
-<ul id="taskList"></ul>
+  <!-- Taaklijst -->
+  <ul id="taskList"></ul>
 
-<script src="script.js"></script>
+  <!-- Script -->
+  <script src="script.js"></script>
 </body>
 </html>
