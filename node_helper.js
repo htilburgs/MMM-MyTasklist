@@ -126,6 +126,7 @@ module.exports = NodeHelper.create({
     this.wss = new WebSocket.Server({ server });
 
     this.wss.on("connection", ws => {
+      console.log("New WebSocket connection MMM-MyTasklist");  
       this.clients.push(ws);
       const data = this.loadTasks();
       ws.send(JSON.stringify({ type: "TASKS", tasks: data.tasks || [], lang: data.lang || "nl" }));
